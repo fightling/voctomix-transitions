@@ -42,7 +42,8 @@ Switch from full screen to a composite of both sources can be done by blending t
 
 To switch between A and B within a composite an animation is preferable. In some composites like __PiP(A,B)__ the second source (B) is overlapping the first one (A) and so the *z-order* (order in which the frames have to be drawn) has to be flipped within a transition to get a proper effect.
 
-To guarantee that this is possible transitions can be improved by inserting so-called __intermediate composites__ which add __key frames__ for both sources. _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth motion between __*t*(A,B)__ &harr; __*t'*(A,B)__ &harr; __*t*(B,A)__. You even can use multiple intermediate composites within the same transition, if you like.
+To guarantee that this is possible transitions can be improved by inserting so-called __intermediate composites__ which add __key frames__ for both sources in which they do not overlap and so bring a chance to do the z-order swap.
+_voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth motion between __*t*(A,B)__ &harr; __*t'*(A,B)__ &harr; __*t*(B,A)__. You even can use multiple intermediate composites within the same transition, if you like.
 
 #### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)
 
@@ -407,7 +408,7 @@ pip-pip                             = 1500, pip / sidebyside / pip
 ### Code
 
 #### main program
-The main program consists of several functions which are called from a main block:
+The program consists of several functions which are called from a main block:
 
 ```python
 read_arguments()
@@ -438,7 +439,7 @@ def read_config(filename):
 `filename` is the name of the config file.
 
 #### render_sequence()
-Render all transitions between all items in the given sequence.
+Render all transitions between all items in the given sequence by using `safe_transition_gif()` (see below).
 ```python
 def render_sequence(size, fps, targets, transitions, composites):
 ```
@@ -446,19 +447,19 @@ Sequence is defined by the names listed in `targets`.
 Producing images of the given `size`.
 Calculate with `fps` frames per second and use the `transitions` and `composites` dictonaries to find matching transitions.
 
+#### save_transition_gif()
+Generates an anmiated GIF of the given name of an animation by using `draw_transition()` (see below)
+```python
+def save_transition_gif(filename, size, name, animation, time):
+```
+`filename` is the name of the resulting file, `size` it's dimensions, `name` the displayed title, `animation` the transition to render and `time` the duration of that whole animation in the GIF.
+
 #### draw_transition()
 Internal function that draws one transition and returns a list of images.
 ```python
 def draw_transition(size, transition, name=None):
 ```
 Producing images of `transtion` in the given `size`.
-
-#### save_transition_gif()
-Generates an anmiated GIF of the given name of an animation.  
-```python
-def save_transition_gif(filename, size, name, animation, time):
-```
-`filename` is the name of the resulting file, `size` it's dimensions, `name` the displayed title, `animation` the transition to render and `time` the duration of that whole animation in the GIF.
 
 ## TODO
 #### Integration into exisiting voctomix
