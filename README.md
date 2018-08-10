@@ -7,11 +7,11 @@ The purpose of _voctomix_ __transitions__ is to implement an easy way to semi-au
 So far _voctomix_ was capable of using the following preset composites:
 
 - single source __*s*(A)__
-  - single  source full screen: __Fs(A)__ or __Fs(B)__
+  - single  source full screen
 - two sources __*t*(A,B)__
-  - side-by-side: __SbS(A,B)__
-  - picture-in-picture: __PiP(A,B)__
-  - side-by-side-preview: __SbSP(A,B)__
+  - side-by-side
+  - picture-in-picture
+  - side-by-side-preview
 
 Until transitions existed in _voctomix_, switching between any of these compositing scenarios was made rapidly from one frame to the next. The idea of transitions is to fade between composites by doing an animation and/or alpha (transparency) blending. With _voctomix_ __transitions__ we like to produce the most expected result for every possible scenario and give the user also the ability to create new composites and adjust or improve existing or even invent new transitions.
 
