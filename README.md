@@ -22,6 +22,7 @@ __s(A)__ and __t(A,B)__ are composites showing one or two sources.
 #### *s*(A) &harr; *s*(B)
 
 ![fullscreen-fullscreen transition](images/fullscreen-fullscreen.gif)
+![another fullscreen-fullscreen transition](images/fullscreen-fullscreen-both.gif)
 
 First case is to switch from one full screen source to another by switching A &harr; B. The most common method here is to blend transparency of both sources from one to the other.
 
