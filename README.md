@@ -278,7 +278,7 @@ c.alpha-b = 0.5               ; 50% semitransparent source B as float
 
 #### BOOL
 
-Some value. If non-empty the option will be set ('true' for example)
+Some value. If non-empty the option will be set (e.g. `yes`)
 
 ##### Examples
 ```ini
@@ -287,7 +287,7 @@ c.inter = yes                 ; make 'c' an intermediate composite
 
 #### Absolute and Proportional Coordinates
 
-In __RECT__, __ALPHA__ and __CROP__ you may decide if you like to use _absolute pixel coordinates_ or _proportional floating point values_.
+In __RECT__ and __CROP__ you may decide if you like to use _absolute pixel coordinates_ or _proportional floating point values_.
 Using proportional values is often an advantage because you can easily change the full screen size once and all other pixel values will be automatically calculated with that size.
 This enables you to use the same composites configuration with different resolutions but similar apect ratio.
 
@@ -459,11 +459,15 @@ def save_transition_gif(filename, size, name, animation, time):
 ```
 `filename` is the name of the resulting file, `size` it's dimensions, `name` the displayed title, `animation` the transition to render and `time` the duration of that whole animation in the GIF.
 
-## Integration into exisiting voctomix
+## TODO
+#### Integration into exisiting voctomix
 
 To get out video transition effect within _voctomix_ the configuration needs a format update and the compositor must be extended by the ability to switch the compositing scenario quickly frame by frame synchronized with the play time.
 
-## Future Development
+#### Review the coordinate formats
+...in RECT and CROP so we do not hurt someone's feelings.
+
+### Future Development
 
 - May be have just one `configure()` in `Transitions` which returns both composites and transitions so that you only need to import the Transitions interface instead of additionally the Composties interface.
 - Decide in which way three source scenarios like *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>) can profite from any kind of specialized transitions.
