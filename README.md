@@ -13,7 +13,7 @@ So far _voctomix_ was capable of using the following preset composites:
   - picture-in-picture
   - side-by-side-preview
 
-Until transitions existed in _voctomix_, switching between any of these compositing scenarios was made rapidly from one frame to the next. The idea of transitions is to fade between composites by doing an animation and/or alpha (transparency) blending. With _voctomix_ __transitions__ we like to produce the most expected result for every possible scenario and give the user also the ability to create new composites and adjust or improve existing or even invent new transitions.
+Until transitions existed in _voctomix_, switching between any of these compositing scenarios was made rapidly from one frame to the next. The idea of transitions is to fade between composites by doing an animation and/or alpha (transparency) blending. With _voctomix_ __transitions__ we like to produce the most expected result for every possible scenario and give the user also the ability to create new composites and adjust or improve existing ones or even invent new transitions.
 
 Generally we can differ between the following transition cases.
 The images below show in source <span style="color:red">__A__</span> in red and source <span style="color:blue">__B__</span> in blue.
@@ -132,7 +132,7 @@ Currently it is only used within the _Transition Tester_ to generate test output
 ### Transition
 
 A transition consists of a list of composites.
-These composites can be two or more in a list of __key composites__ to morph between to gemerate an animation or a list of composites which describe a morphed animation and so a ready-to-go transition.
+These composites can be two or more in a list of __key composites__ to generate an animation for or a list of composites which describe an already generated animation and so a ready-to-go transition.
 
 #### Transition.frames()
 Returns the number of composites stored in this transition.
