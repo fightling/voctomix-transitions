@@ -18,51 +18,6 @@ class Composites:
         """ read INI like configuration from <cfg> and return all the defined
             composites. <size> is the overall frame size which all proportional
             (floating point) coordinates are related to.
-
-            Possible attributes:
-
-                attribute                format         default
-                NAME.a                 = RECT           no output
-                NAME.b                 = RECT           no output
-                NAME.crop-a            = CROP           no cropping
-                NAME.crop-b            = CROP           no cropping
-                NAME.default-a         = INPUT          do not change source
-                NAME.default-b         = INPUT          do not change source
-                NAME.alpha-a           = ALPHA          opaque
-                NAME.alpha-b           = ALPHA          opaque
-                NAME.inter             = BOOL           not intermediate
-
-            Value types:
-
-                NAME =  unique composite name
-                RECT =  Rectangular coordinates which are given by
-                        X/Y WxH
-                    or  POS WxH
-                    or  X/Y SIZE
-                    or  POS SIZE
-                    or  *
-
-                        X,Y,W,H can be mixed integer absolute coordinates or
-                        float proportions POS and SIZE must both be float
-                        proportions.
-                        '*' stands for full screen size (0/0 1.0x1.0)
-
-                CROP =  Cropping borders which are given by
-                        L/T/R/B
-                    or  LR/TB
-                    or  LRTB
-                    or  *
-
-                        L,T,R,B, LR,TB and LRTB can be mixed integer absolute
-                        coordinates or float proportions
-
-                INPUT = Any available input source name (grabber, cam1, cam2,
-                        ...)
-                ALPHA = numeric value in the range between 0 (invisible) and
-                        255 (opaque) or float value between 0.0 (invisible) and
-                        1.0 (opaque)
-                BOOL =  some value. if non-empty the option will be set ('true'
-                        for example)
         """
         # prepare resulting composites dictonary
         composites = dict()

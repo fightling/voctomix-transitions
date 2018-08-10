@@ -21,19 +21,6 @@ class Transitions:
         """ generate all transitions configured in the INI-like configuration
             string in <cfg> by using the given <composites> and return them
             in a dictonary
-
-            Possible configuration items in <cfg>:
-
-                NAME = COMPOSITE / [.../] COMPOSITE
-
-                Named list of two or more transitions each one can be freely
-                named and is a list of composites which will be morphed into an
-                animation. Interpolation will be linear with two composites and
-                B-Splines for more.
-
-            Value Types:
-                NAME        =  custom name
-                COMPOSITE   =  composite name (from composite configuration)
         """
         # prepare dictonary
         transitions = dict()
