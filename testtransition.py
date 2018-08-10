@@ -77,7 +77,7 @@ def read_config(filename):
     log.info("reading transitions from configuration...")
     transitions = Transitions.configure(
         config.items('transitions'), composites, fps)
-    log.debug("read %d transitions:\n\t%s\t" %
+    log.debug("read %d transition(s):\n\t%s\t" %
               (len(transitions), '\n\t'.join(transitions)))
     # list of all relevant composites we like to target
     targets = []
@@ -93,13 +93,13 @@ def read_config(filename):
         targets = Args.composite
 
         # get all possible transitions between composites
-    log.debug("using %d target composites:\n\t%s\t" %
+    log.debug("using %d target composite(s):\n\t%s\t" %
               (len(targets), '\n\t'.join(targets)))
     # list targets and itermediates
     if Args.list:
-        print("%d targetable composites:\n\t%s\t" %
+        print("%d targetable composite(s):\n\t%s\t" %
               (len(targets), '\n\t'.join(sorted(targets))))
-        print("%d intermediate composites:\n\t%s\t" %
+        print("%d intermediate composite(s):\n\t%s\t" %
               (len(intermediates), '\n\t'.join(sorted(intermediates))))
     # return config
     return size, fps, targets, transitions, composites
@@ -144,7 +144,7 @@ def draw_transition(size, transition, name=None):
                 tsize = drawFg.textsize(text, font=font)
                 # draw info text
                 drawFg.text([(size[X] - tsize[X]) / 2, size[Y] - tsize[Y] * 2],
-    text, font=font)
+                            text, font=font)
         if Args.crop:
             # draw source frame
             drawA.rectangle(a.rect, outline=(128, 0, 0, a.alpha))
@@ -284,10 +284,10 @@ def render_sequence(size, fps, targets, transitions, composites):
     # report findings
     if found:
         if Args.list:
-            print("%d transitions available:\n\t%s" %
+            print("%d transition(s) available:\n\t%s" %
                   (len(found), '\n\t'.join(sorted(found))))
     if not_found:
-        log.warning("%d transitions could NOT be found!" % not_found)
+        log.warning("%d transition(s) could NOT be found!" % not_found)
 
 
 read_arguments()

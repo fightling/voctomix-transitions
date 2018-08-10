@@ -16,7 +16,7 @@ So far _voctomix_ was capable of using the following preset composites:
 Until transitions existed in _voctomix_, switching between any of these compositing scenarios was made rapidly from one frame to the next. The idea of transitions is to fade between composites by doing an animation and/or alpha (transparency) blending. With _voctomix_ __transitions__ we like to produce the most expected result for every possible scenario and give the user also the ability to create new composites and adjust or improve existing ones or even invent new transitions.
 
 Generally we can differ between the following transition cases.
-The images below show in source <span style="color:red">__A__</span> in red and source <span style="color:blue">__B__</span> in blue.
+The images below show source <span style="color:red">__A__</span> in red and source <span style="color:blue">__B__</span> in blue.
 __s(A)__ and __t(A,B)__ are composites showing one or two sources.
 
 #### *s*(A) &harr; *s*(B)
@@ -150,7 +150,7 @@ def B(self, n):
 Precisely returns `Frame` number `n` of source A or B of the `Transtition`.
 
 #### Transition.flip()
-Return the number of preferred frame to flip both sources (and the scenario) to get a propper z-order behavior.
+Return the index of the frame preferred to flip both sources (and the scenario) to get a propper z-order behavior.
 ```python
 def flip(self):
 ```
@@ -272,8 +272,8 @@ Integer value in the range between `0` (invisible) and `255` (opaque) or float v
 
 ##### Examples
 ```ini
-c.alpha-a = 0.5               ; 50% semitransparent source A as float
-c.alpha-b = *                 ; opaque source B using '*'
+c.alpha-a = *                 ; opaque source A using '*'
+c.alpha-b = 0.5               ; 50% semitransparent source B as float
 ```
 
 #### BOOL
@@ -287,7 +287,7 @@ c.inter = yes                 ; make 'c' an intermediate composite
 
 #### Absolute and Proportional Coordinates
 
-In __RECT__, __ALPHA__ and __CROP__ you may decide if you like use _absolute pixel coordinates_ or _proportional floating point values_.
+In __RECT__, __ALPHA__ and __CROP__ you may decide if you like to use _absolute pixel coordinates_ or _proportional floating point values_.
 Using proportional values is often an advantage because you can easily change the full screen size once and all other pixel values will be automatically calculated with that size.
 This enables you to use the same composites configuration with different resolutions but similar apect ratio.
 
@@ -371,16 +371,16 @@ optional arguments:
 
 ```
 ▶ python3 testtransition.py -lvgCctk pip
-1 targetable composites:
+1 targetable composite(s):
 	pip
-7 intermediate composites:
+1 intermediate composite(s):
 	fullscreen-pip
 saving transition animation file 'pip-pip.gif' (pip-pip, 37 frames)...
 1 transitions available:
 	pip-pip
 ```
 
-This call generated the following animated GIF:
+This call generates the following animated GIF:
 
 ![pip-pip transition with keyframes](images/pip-pip-key.gif)
 
