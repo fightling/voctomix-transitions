@@ -9,11 +9,11 @@
 	- [*t*(A,B) &harr; *t*(B,A)](#tab-harr-tba)
 	- [*t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)](#tsub1subab-harr-tsub2subab)
 	- [*s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>), *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>)](#sasub1sub-harr-sasub2sub-tasub1subb-harr-tasub2subb-or-tabsub1sub-harr-tabsub2sub)
-- [Interfaces <a id="interfaces"></a>](#interfaces-a-idinterfacesa)
-	- [Composites <a id="composites"></a>](#composites-a-idcompositesa)
-	- [Transitions <a id="transitions"></a>](#transitions-a-idtransitionsa)
-- [Entities <a id="entities"></a>](#entities-a-identitiesa)
-	- [Transition <a id="transiton"></a>](#transition-a-idtransitona)
+- [Interfaces](#interfaces)
+	- [Composites](#composites)
+	- [Transitions](#transitions)
+- [Entities](#entities)
+	- [Transition](#transition)
 	- [Composite](#composite)
 	- [Frame](#frame)
 - [Configuration](#configuration)
@@ -87,7 +87,7 @@ Switching the composite while leaving the sources A and B untouched is similar t
 
 Switching one of both sources to another input channel can lead to a three sources scenario which is currently not covered by _voctomix_ __transitions__ but shall be part of *future development*.
 
-## Interfaces <a id="interfaces"></a>
+## Interfaces
 
 To use the following code you first need to import some stuff.
 
@@ -99,11 +99,11 @@ from transitions import Transitions, Composites, L, T, R, B, X, Y
 `X` and `Y` can be used to access width amd height in `size`.
 
 
-### Composites <a id="composites"></a>
+### Composites
 
 `Composites` (plural) is a python class of the preferred interface to _voctomix_ __composites__ and includes the following function:
 
-#### Composites.configure() <a id="composite.configure"></a>
+#### Composites.configure()
 Reads a configuration and returns all included composites.
 Take that return value and give it to `Transitions.configure()` to load the transitions configuration.
 You may also use the included composites to set up your compositor's switching capabilities - for example in the user interface.
@@ -118,7 +118,7 @@ The return value is a dictonary of `string` &harr; `Composite`.
 
 In *future development* this could also take different `size` values for each source too.
 
-#### Equivalent Composites <a id="equivalent-composites"></a>
+#### Equivalent Composites
 
 A word about the equality of composites in the meaning of there appearance:
 
@@ -128,11 +128,11 @@ So these composites may be treated as equivalent when using `Transition.find()` 
 
 This is why `Transition.find()` (see below) is quite intuitive in finding matching transitions.
 
-### Transitions <a id="transitions"></a>
+### Transitions
 
 `Transitions` (plural) is a python class of the preferred interface to _voctomix_ __transitions__ consisting of the following functions.
 
-#### Transitions.configure() <a id="transitions.condigure"></a>
+#### Transitions.configure()
 Reads a configuration and returns all included transitions.
 Take that return value and give it to `find()` to fetch a specific transition.
 ```python
@@ -140,7 +140,7 @@ def configure(cfg, composites, fps=25):
 ```
 Generates all transitions configured by the list of named configuration values in dictonary `cfg` (`string` &rarr; `string`) by using the given `composites` and `fps` (frames per second) and return them in a dictonary of `string` &rarr; `Transition`.
 
-#### Transitions.find() <a id="transitions.find"></a>
+#### Transitions.find()
 Fetch a transition whose beginning and ending is matching the given composites.
 ```python
 def find(begin, _end, transitions):
@@ -150,7 +150,7 @@ In a second step also generates reversed versions of transitions that matches th
 
 In *future development* this could easily return all matching transitions to add a randomizer or so.
 
-#### Transitions.travel() <a id="transitions.travel"></a>
+#### Transitions.travel()
 Returns a list of pairs of composites along all possible transitions between all given `composites` by walking the tree of all combinations recusively.
 ```python
 def travel(composites, previous=None):
@@ -160,9 +160,9 @@ This method is just a tool to walk all possible transitions in one animation and
 
 Currently it is only used within the _Transition Tester_ to generate test output but could be also subject of *future development* to generate more complex animations by concatination.
 
-## Entities <a id="entities"></a>
+## Entities
 
-### Transition <a id="transiton"></a>
+### Transition
 
 A transition consists of a list of composites.
 These composites can be two or more in a list of __key composites__ to generate an animation for or a list of composites which describe an already generated animation and so a ready-to-go transition.
