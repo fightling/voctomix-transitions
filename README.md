@@ -1,5 +1,33 @@
 # Vocotomix Transitions
 
+<!-- TOC depthFrom:2 depthTo:3 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [Purpose](#purpose)
+- [Use Cases](#use-cases)
+	- [*s*(A) &harr; *s*(B)](#sa-harr-sb)
+	- [*s*(A) &harr; *t*(A,B)](#sa-harr-tab)
+	- [*t*(A,B) &harr; *t*(B,A)](#tab-harr-tba)
+	- [*t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)](#tsub1subab-harr-tsub2subab)
+	- [*s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>), *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>)](#sasub1sub-harr-sasub2sub-tasub1subb-harr-tasub2subb-or-tabsub1sub-harr-tabsub2sub)
+- [Interfaces <a id="interfaces"></a>](#interfaces-a-idinterfacesa)
+	- [Composites <a id="composites"></a>](#composites-a-idcompositesa)
+	- [Transitions <a id="transitions"></a>](#transitions-a-idtransitionsa)
+- [Entities <a id="entities"></a>](#entities-a-identitiesa)
+	- [Transition <a id="transiton"></a>](#transition-a-idtransitona)
+	- [Composite](#composite)
+	- [Frame](#frame)
+- [Configuration](#configuration)
+	- [Configure Composites](#configure-composites)
+	- [Configure Transitions](#configure-transitions)
+- [Using Transitions in Code](#using-transitions-in-code)
+- [Transition Tester](#transition-tester)
+	- [Example Usage](#example-usage)
+	- [Code](#code)
+- [TODO](#todo)
+	- [Future Development](#future-development)
+
+<!-- /TOC -->
+
 ## Purpose
 
 The purpose of _voctomix_ __transitions__ is to implement an easy way to semi-automatize fading from one _video mixing scenario_ to another. We call those scenarios __composites__. A composite in _voctomix_ traditionally consitsts of up to two mixed video sources __A__ and __B__ whose representation parameters we call __frames__.
@@ -15,18 +43,20 @@ So far _voctomix_ was capable of using the following preset composites:
 
 Until transitions existed in _voctomix_, switching between any of these compositing scenarios was made rapidly from one frame to the next. The idea of transitions is to fade between composites by doing an animation and/or alpha (transparency) blending. With _voctomix_ __transitions__ we like to produce the most expected result for every possible scenario and give the user also the ability to create new composites and adjust or improve existing ones or even invent new transitions.
 
+## Use Cases
+
 Generally we can differ between the following transition cases.
 The images below show source <span style="color:red">__A__</span> in red and source <span style="color:blue">__B__</span> in blue.
 __s(A)__ and __t(A,B)__ are composites showing one or two sources.
 
-#### *s*(A) &harr; *s*(B)
+### *s*(A) &harr; *s*(B)
 
 ![fullscreen-fullscreen transition](images/fullscreen-fullscreen.gif)
 ![another fullscreen-fullscreen transition](images/fullscreen-fullscreen-both.gif)
 
 First case is to switch from one full screen source to another by switching A &harr; B. The most common method here is to blend transparency of both sources from one to the other.
 
-#### *s*(A) &harr; *t*(A,B)
+### *s*(A) &harr; *t*(A,B)
 
 ![fullscreen-fullscreen transition](images/fullscreen-pip.gif)
 ![fullscreen-sidebyside transition](images/fullscreen-sidebyside.gif)
@@ -34,7 +64,7 @@ First case is to switch from one full screen source to another by switching A &h
 
 Switch from full screen to a composite of both sources can be done by blending the alpha channel of the added source from transparent to opaque or by an animation of the incoming source or both.
 
-#### *t*(A,B) &harr; *t*(B,A)
+### *t*(A,B) &harr; *t*(B,A)
 
 ![sidebyside-sidebyside transition](images/sidebyside-sidebyside.gif)
 ![pip-pip transition](images/pip-pip.gif)
@@ -45,7 +75,7 @@ To switch between A and B within a composite an animation is preferable. In some
 To guarantee that this is possible transitions can be improved by inserting so-called __intermediate composites__ which add __key frames__ for both sources in which they do not overlap and so bring a chance to do the z-order swap.
 _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth motion between __*t*(A,B)__ &harr; __*t'*(A,B)__ &harr; __*t*(B,A)__. You even can use multiple intermediate composites within the same transition, if you like.
 
-#### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)
+### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)
 
 ![sidebyside-sidebysidepreview transition](images/sidebyside-sidebysidepreview.gif)
 ![sidebysidepreview-sidebyside transition](images/sidebysidepreview-sidebyside.gif)
@@ -53,11 +83,11 @@ _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth mot
 
 Switching the composite while leaving the sources A and B untouched is similar to the previous case __*t*(A,B)__ &harr; __*t*(B,A)__ except that there is usually no need to have intermediate composites to switch the z-order because A and B remain unswapped.
 
-#### *s*(__A<sub>1</sub>__) &harr; *s*(__A<sub>2</sub>__), *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>)
+### *s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>), *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>)
 
 Switching one of both sources to another input channel can lead to a three sources scenario which is currently not covered by _voctomix_ __transitions__ but shall be part of *future development*.
 
-## Entities
+## Interfaces <a id="interfaces"></a>
 
 To use the following code you first need to import some stuff.
 
@@ -69,11 +99,11 @@ from transitions import Transitions, Composites, L, T, R, B, X, Y
 `X` and `Y` can be used to access width amd height in `size`.
 
 
-### Composites
+### Composites <a id="composites"></a>
 
 `Composites` (plural) is a python class of the preferred interface to _voctomix_ __composites__ and includes the following function:
 
-#### Composites.configure()
+#### Composites.configure() <a id="composite.configure"></a>
 Reads a configuration and returns all included composites.
 Take that return value and give it to `Transitions.configure()` to load the transitions configuration.
 You may also use the included composites to set up your compositor's switching capabilities - for example in the user interface.
@@ -88,7 +118,7 @@ The return value is a dictonary of `string` &harr; `Composite`.
 
 In *future development* this could also take different `size` values for each source too.
 
-#### Equivalent Composites
+#### Equivalent Composites <a id="equivalent-composites"></a>
 
 A word about the equality of composites in the meaning of there appearance:
 
@@ -98,11 +128,11 @@ So these composites may be treated as equivalent when using `Transition.find()` 
 
 This is why `Transition.find()` (see below) is quite intuitive in finding matching transitions.
 
-### Transitions
+### Transitions <a id="transitions"></a>
 
 `Transitions` (plural) is a python class of the preferred interface to _voctomix_ __transitions__ consisting of the following functions.
 
-#### Transitions.configure()
+#### Transitions.configure() <a id="transitions.condigure"></a>
 Reads a configuration and returns all included transitions.
 Take that return value and give it to `find()` to fetch a specific transition.
 ```python
@@ -110,7 +140,7 @@ def configure(cfg, composites, fps=25):
 ```
 Generates all transitions configured by the list of named configuration values in dictonary `cfg` (`string` &rarr; `string`) by using the given `composites` and `fps` (frames per second) and return them in a dictonary of `string` &rarr; `Transition`.
 
-#### Transitions.find()
+#### Transitions.find() <a id="transitions.find"></a>
 Fetch a transition whose beginning and ending is matching the given composites.
 ```python
 def find(begin, _end, transitions):
@@ -120,7 +150,7 @@ In a second step also generates reversed versions of transitions that matches th
 
 In *future development* this could easily return all matching transitions to add a randomizer or so.
 
-#### Transitions.travel()
+#### Transitions.travel() <a id="transitions.travel"></a>
 Returns a list of pairs of composites along all possible transitions between all given `composites` by walking the tree of all combinations recusively.
 ```python
 def travel(composites, previous=None):
@@ -130,8 +160,9 @@ This method is just a tool to walk all possible transitions in one animation and
 
 Currently it is only used within the _Transition Tester_ to generate test output but could be also subject of *future development* to generate more complex animations by concatination.
 
+## Entities <a id="entities"></a>
 
-### Transition
+### Transition <a id="transiton"></a>
 
 A transition consists of a list of composites.
 These composites can be two or more in a list of __key composites__ to generate an animation for or a list of composites which describe an already generated animation and so a ready-to-go transition.
@@ -311,28 +342,28 @@ This generates a B-Spline transition from composite `pip` to composite `sidebysi
 ## Using Transitions in Code
 
 ```python
-from transitions import Composites, Transitions, L, T, R, B
-from configparser import SafeConfigParser
-from out_of_scope import update_my_compositor
+  from transitions import Composites, Transitions, L, T, R, B
+  from configparser import SafeConfigParser
+  from out_of_scope import update_my_compositor
 
-# set frame size
-size = [1920, 1080]
-# set frames per second
-fps = 25
-# load INI files
-config = SafeConfigParser()
-config.read(filename)
-# read composites config section
-composites = Composites.configure(config.items('composites'), size)
-# read transitions config section
-transitions = Transitions.configure(config.items('transitions'), composites, fps)
+  # set frame size
+  size = [1920, 1080]
+  # set frames per second
+  fps = 25
+  # load INI files
+  config = SafeConfigParser()
+  config.read(filename)
+  # read composites config section
+  composites = Composites.configure(config.items('composites'), size)
+  # read transitions config section
+  transitions = Transitions.configure(config.items('transitions'), composites, fps)
 
-# search for a transitions that does a fade between fullscreen and sidebyside composites
-t_name, t = Transitions.find(composites["fullscreen"], composites["sidebyside"], transitions)
-# stupid loop through all frames of the animation
-for i in range(t.frames()):
-  # access current frame in animation to update compositing scenario
-  update_my_compositor( t.A(i), t.B(i) )
+  # search for a transitions that does a fade between fullscreen and sidebyside composites
+  t_name, t = Transitions.find(composites["fullscreen"], composites["sidebyside"], transitions)
+  # stupid loop through all frames of the animation
+  for i in range(t.frames()):
+    # access current frame in animation to update compositing scenario
+    update_my_compositor( t.A(i), t.B(i) )
 ```
 
 ## Transition Tester
