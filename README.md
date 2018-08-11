@@ -40,7 +40,7 @@ Switch from full screen to a composite of both sources can be done by blending t
 ![pip-pip transition](images/pip-pip.gif)
 ![sidebysidepreview-sidebysidepreview transition](images/sidebysidepreview-sidebysidepreview.gif)
 
-To switch between A and B within a composite an animation is preferable. In some composites like __PiP(A,B)__ the second source (B) is overlapping the first one (A) and so the *z-order* (order in which the frames have to be drawn) has to be flipped within a transition to get a proper effect.
+To switch between A and B within a composite an animation is preferable. In some composites like _picture-in-picture_ (see picture in the middle) the second source (B) is overlapping the first one (A) and so the *z-order* (order in which the frames have to be drawn) has to be flipped within a transition to get a proper effect.
 
 To guarantee that this is possible transitions can be improved by inserting so-called __intermediate composites__ which add __key frames__ for both sources in which they do not overlap and so bring a chance to do the z-order swap.
 _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth motion between __*t*(A,B)__ &harr; __*t'*(A,B)__ &harr; __*t*(B,A)__. You even can use multiple intermediate composites within the same transition, if you like.
@@ -386,17 +386,23 @@ This call generates the following animated GIF:
 
 ![pip-pip transition with keyframes](images/pip-pip-key.gif)
 
-Using the following configuration file:
+You can see the key frames of `pip` `A.0`=`B.2` and `B.0`=`A.2` of the start and end composite. In the vertical center you can see the key frames `A.1` and `B.1` given by sidebyside to produce a moment of non-overlapping. At the first time when the blue frame `B` is not overlapping the red one `A` the fleipping point is reached and sources `A`/`B` can be flipped without side effects.
+
+The following configuration file was used to generate that animation:
 
 ```ini
 [output]
+; full screen size in pixel
 size    = 960x540
+; frames per second to render
 fps     = 25
 
 [composites]
+; picture-in-picture composite
 pip.a                               = *                 ; full screen
 pip.b                               = 0.83/0.82 0.16    ; lower-right corner with 16% size
 
+; side-by-side composite
 sidebyside.a                        = 0.008/0.25 0.49   ; left-middle nearly half size
 sidebyside.b                        = 0.503/0.25 0.49   ; right-middle nearly half size
 
