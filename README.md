@@ -1,7 +1,9 @@
 # Vocotomix Transitions
 
+## TOC
 <!-- TOC depthFrom:2 depthTo:3 withLinks:1 updateOnSave:1 orderedList:0 -->
 
+- [TOC](#toc)
 - [Purpose](#purpose)
 - [Use Cases](#use-cases)
 	- [*s*(A) &harr; *s*(B)](#sa-harr-sb)
@@ -19,7 +21,7 @@
 - [Configuration](#configuration)
 	- [Configure Composites](#configure-composites)
 	- [Configure Transitions](#configure-transitions)
-- [Using Transitions in Code](#using-transitions-in-code)
+- [Using Transitions](#using-transitions)
 - [Transition Tester](#transition-tester)
 	- [Example Usage](#example-usage)
 	- [Code](#code)
@@ -339,7 +341,7 @@ my_transition = 1500, pip / sidebyside / pip
 ```
 This generates a B-Spline transition from composite `pip` to composite `sidebyside` to composite `pip` (with A and B automatically swapped) with a duration of one and a half seconds (`1500` milliseconds).
 
-## Using Transitions in Code
+## Using Transitions
 
 ```python
   from transitions import Composites, Transitions, L, T, R, B
