@@ -218,15 +218,15 @@ To keep migration easy the basic options and values are mostly just reordered or
 
 List of configurations of custom named composites for mixing video sources A and B.
 
-Attribute|Format (see below)|Default (when absent)
--|-|-
-_name_`.a`|RECT|no output (like `*` or `0/0 0x0`)
-_name_`.b`|RECT|no output
-_name_`.crop-a`|CROP|no cropping (like `0` or `0/0/0/0`)
-_name_`.crop-b`|CROP|no cropping
-_name_`.alpha-a`|ALPHA|opaque (like `255` or `1.0`)
-_name_`.alpha-b`|ALPHA|opaque
-_name_`.inter`|BOOL|not intermediate
+Attribute       | Format (see below)| Default (when absent)
+----------------|-------------------|-----------------------------------------
+_name_`.a`      | RECT              | no output (like `0/0 0x0`)
+_name_`.b`      | RECT              | no output
+_name_`.crop-a` | CROP              | no cropping (like `0` or `0/0/0/0`)
+_name_`.crop-b` | CROP              | no cropping
+_name_`.alpha-a`| ALPHA             | opaque (like `255` or `1.0`)
+_name_`.alpha-b`| ALPHA             | opaque
+_name_`.inter`  | BOOL              | not intermediate
 
 #### _name_
 All attributes begin with the composite name followed by a dot `.` and the attribute's name.
