@@ -77,6 +77,14 @@ class Transitions:
         return None
 
     def find(begin, _end, transitions):
+        """ Searches in the given transitions for a transition that fades begin
+            to _end. In a second step also generates reversed versions of
+            transitions that matches that way.
+        """
+        assert type(begin) is Composite
+        assert type(_end) is Composite
+        assert type(transitions) is dict
+
         # swap target A/B if requested begin and end is the same
         end = _end.swapped() if begin == _end else _end
         # log caller request
@@ -184,18 +192,24 @@ class Transition:
             return self.frames()
 
     def calculate(composites, frames, a_corner=(R, T), b_corner=(L, T)):
+        """ calculate a transition between the given composites which shall
+            have the given amount of frames. Use a_corner of frames in A and
+            b_corner of frames in B to interpolate the animation movement.
+        """
         # extract two lists of frames for use with interpolate()
         a = [c.A() for c in composites]
         b = [c.B() for c in composites]
         # check if begin and end of animation are equal
         if a[-1] == a[0] and b[-1] == b[0]:
-            # then swap them
+            # then swap the end composite
             a[-1], b[-1] = b[-1], a[-1]
         # generate animation
         return Transition(interpolate(a, frames, a_corner),
                           interpolate(b, frames, b_corner))
 
     def keys(self):
+        """ return the indices of all key composites
+        """
         return [i for i in self.composites if i.A().key]
 
 
@@ -208,7 +222,7 @@ def frange(x, y, jump):
 
 
 def bspline(points):
-    """ do a B-Spline interpolation between the given points
+    """ do a B - Spline interpolation between the given points
         returns interpolated points
     """
     # parameter check
@@ -276,9 +290,18 @@ def smooth(x):
 
 
 def distribute(points, positions, begin, end, x0, x1, n):
-    """ from the sub set given by <points>, <begin> and <end> takes <n> points
-        whose distances are smoothly distributed
+    """ from the sub set given by <points>[<begin>:<end>+1] selects <n> points
+        whose distances are smoothly distributed and returns them.
+        <poisitions> holds a list of distances between all <points> that will
+        be used for smoothing the distribution.
     """
+    assert type(points) is np.ndarray
+    assert type(positions) is list
+    assert type(begin) is np.int64
+    assert type(end) is np.int64
+    assert type(x0) is float
+    assert type(x1) is float
+    assert type(n) is int
     # calculate overall distance from begin to end
     length = positions[end - 1][V] - positions[begin][V]
     # begin result with the first point
@@ -307,7 +330,7 @@ def distribute(points, positions, begin, end, x0, x1, n):
 
 
 def fade(begin, end, factor):
-    """ return value within begin and end at <factor> (0.0..1.0)
+    """ return value within begin and end at < factor > (0.0..1.0)
     """
     # check if we got a bunch of values to morph
     if type(begin) in [list, tuple]:
@@ -345,8 +368,8 @@ def morph(begin, end, pt, corner, factor):
 
 
 def interpolate(key_frames, num_frames, corner):
-    """ interpolate <num_frames> points of one corner defined by <corner>
-        between the rectangles given by <key_frames>
+    """ interpolate < num_frames > points of one corner defined by < corner >
+        between the rectangles given by < key_frames >
     """
     # get corner points defined by index_x,index_y from rectangles
     corners = np.array([i.corner(corner[X], corner[Y]) for i in key_frames])

@@ -419,7 +419,7 @@ This call generates the following animated GIF:
 
 ![pip-pip transition with keyframes](images/pip-pip-key.gif)
 
-You can see the key frames of `pip` `A.0`=`B.2` and `B.0`=`A.2` of the start and end composite. In the vertical center you can see the key frames `A.1` and `B.1` given by sidebyside to produce a moment of non-overlapping. At the first time when the blue frame `B` is not overlapping the red one `A` the fleipping point is reached and sources `A`/`B` can be flipped without side effects.
+You can see the key frames of `pip` `A.0`=`B.2` and `B.0`=`A.2` of the start and end composite. In the vertical center you can see the key frames `A.1` and `B.1` given by sidebyside to produce a moment of non-overlapping. At the first time when the blue frame `B` is not overlapping the red one `A` the flipping point is reached and sources `A`/`B` can be flipped without side effects.
 
 The following configuration file was used to generate that animation:
 

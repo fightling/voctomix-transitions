@@ -44,6 +44,9 @@ def read_arguments():
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="also print WARNING (-v), INFO (-vv) and DEBUG (-vvv) messages")
     Args = parser.parse_args()
+    # implicit options
+    if Args.nopng:
+        Args.nogif = 1
 
 
 def init_log():
@@ -54,8 +57,6 @@ def init_log():
     logging.root.setLevel([logging.ERROR, logging.WARNING,
                            logging.INFO, logging.DEBUG][Args.verbose])
     log = logging.getLogger('Transitions Test')
-    if Args.nopng:
-        Args.nogif = 1
 
 
 def read_config(filename):
