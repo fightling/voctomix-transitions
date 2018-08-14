@@ -24,6 +24,7 @@
 - [Using Transitions](#using-transitions)
 - [Transition Tester](#transition-tester)
 	- [Example Usage](#example-usage)
+	- [Using verbose mode](#using-verbose-mode)
 	- [Code](#code)
 - [TODO](#todo)
 	- [Future Development](#future-development)
