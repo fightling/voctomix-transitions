@@ -61,16 +61,22 @@ First case is to switch from one full screen source to another by switching A &h
 
 ### *s*(A) &harr; *t*(A,B)
 
-![fullscreen-fullscreen transition](images/fullscreen-pip.gif)
+![fullscreen-pip transition](images/fullscreen-pip.gif)
 ![fullscreen-sidebyside transition](images/fullscreen-sidebyside.gif)
 ![fullscreen-sidebysidepreview transition](images/fullscreen-sidebysidepreview.gif)
 
 Switch from full screen to a composite of both sources can be done by blending the alpha channel of the added source from transparent to opaque or by an animation of the incoming source or both.
 
+### *t*(A,B) &rarr; *s*(B)
+
+![pip-fullscreen-b transition](images/pip-fullscreen-b.gif)
+![sidebyside-fullscreen-b transition](images/sidebyside-fullscreen-b.gif)
+![sidebysidepreview-fullscreen-b transition](images/sidebysidepreview-fullscreen-b.gif)
+
 ### *t*(A,B) &harr; *t*(B,A)
 
-![sidebyside-sidebyside transition](images/sidebyside-sidebyside.gif)
 ![pip-pip transition](images/pip-pip.gif)
+![sidebyside-sidebyside transition](images/sidebyside-sidebyside.gif)
 ![sidebysidepreview-sidebysidepreview transition](images/sidebysidepreview-sidebysidepreview.gif)
 
 To switch between A and B within a composite an animation is preferable. In some composites like _picture-in-picture_ (see in the middle) the second source (B) is overlapping the first one (A) and so the *z-order* (order in which the frames have to be drawn) has to be flipped within a transition to get a proper effect.
@@ -85,6 +91,8 @@ _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth mot
 ![sidebyside-pip transition](images/sidebyside-pip.gif)
 
 Switching the composite while leaving the sources A and B untouched is similar to the previous case __*t*(A,B)__ &harr; __*t*(B,A)__ except that there is usually no need to have intermediate composites to switch the z-order because A and B remain unswapped.
+
+### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(B,A)
 
 ### *s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>) or *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B)
 
@@ -474,12 +482,12 @@ generated sequence (2 items):
 
 request transition: pip -> pip
 	    Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
-	     *  A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)
-	     *  A( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00) (swapped)
+	     *  A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)
+	     *  A( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00) (swapped)
 trying transition: pip-pip
 	    Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
-	     *  A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)
-	     *  A( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)
+	     *  A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)
+	     *  A( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)
 found transition: pip-pip
 transition found: pip -> pip-pip -> pip
 	No. Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
@@ -518,7 +526,7 @@ Additionally it prints out:
 - the composites used to request the transition `pip -> pip` including a mark `(swapped)` at the right margin indicates that this transition has the same begin and end frame and so it will be swapped,
 - the searched transitions (in this case there is only one),
 - the long table which shows the calculated animation for this transition and all it's properties,
-- the _flipping point_ at `--- FLIP SOURCES ---` from which on the lettes for A and B are swapped and
+- the _flipping point_ at `--- FLIP SOURCES ---` from which on the letters for A and B are swapped and
 - also the `*` signs which mark the used key frames from the composites out of the configuration.
 
 ### Code

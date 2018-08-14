@@ -52,7 +52,7 @@ class Composite:
 
     def __str__(self):
         return "%s A%s\tB%s" % (" * " if self.A().key else
-                                "   ", self.A(), self.A())
+                                "   ", self.A(), self.B())
 
     def __eq__(self, other):
         """ compare two composites if they are looking the same
