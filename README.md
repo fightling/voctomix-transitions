@@ -514,14 +514,12 @@ transition found: pip -> pip-pip -> pip
 
 As you can see the tripple verbose mode (using option `-vvv`) prints out a list of loaded composites and found transitions too, like option `-l` does.
 
-Additionally it prints out
+Additionally it prints out:
 - the composites used to request the transition `pip -> pip` including a mark `(swapped)` at the right margin indicates that this transition has the same begin and end frame and so it will be swapped,
-- the searched transitions (in this case there is only one) and
-- the long table which shows the calculated animation for this transition.
-
-In this table you can see the _flipping point_ at `--- FLIP SOURCES ---` from which on the lettes for A and B are swapped.
-
-You can also see the `*` signs which mark the used key frames from the composites out of the configuration.
+- the searched transitions (in this case there is only one),
+- the long table which shows the calculated animation for this transition and all it's properties,
+- the _flipping point_ at `--- FLIP SOURCES ---` from which on the lettes for A and B are swapped and
+- also the `*` signs which mark the used key frames from the composites out of the configuration.
 
 ### Code
 
