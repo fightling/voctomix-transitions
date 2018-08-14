@@ -93,7 +93,7 @@ def read_config(filename):
         # check for composites in arguments
         targets = Args.composite
 
-        # get all possible transitions between composites
+    # get all possible transitions between composites
     log.debug("using %d target composite(s):\n\t%s\t" %
               (len(targets), '\n\t'.join(targets)))
     # list targets and itermediates
@@ -107,7 +107,7 @@ def read_config(filename):
 
 
 def draw_transition(size, transition, name=None):
-    # indices of size and tsize
+    # indices in size and tsize
     X, Y = 0, 1
     # get a font
     font = ImageFont.truetype("Arial.ttf", 20)

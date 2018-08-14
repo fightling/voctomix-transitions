@@ -88,8 +88,8 @@ class Transitions:
         # swap target A/B if requested begin and end is the same
         end = _end.swapped() if begin == _end else _end
         # log caller request
-        log.debug("\t    %s\n\t    %s %s" %
-                  (begin, end, "(swapped)" if end != _end else ""))
+        log.debug("\t    %s\n\t    %s\n\t    %s %s" %
+                  (Composite.str_title(), begin, end, "(swapped)" if end != _end else ""))
         # try to find a transition with the given start and beginning composite
         result = None
         # search in all known transitions for matching start and end frames

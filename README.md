@@ -10,7 +10,7 @@
 	- [*s*(A) &harr; *t*(A,B)](#sa-harr-tab)
 	- [*t*(A,B) &harr; *t*(B,A)](#tab-harr-tba)
 	- [*t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)](#tsub1subab-harr-tsub2subab)
-	- [*s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>), *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>)](#sasub1sub-harr-sasub2sub-tasub1subb-harr-tasub2subb-or-tabsub1sub-harr-tabsub2sub)
+	- [*s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>) or *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B)](#sasub1sub-harr-sasub2sub-or-tasub1subb-harr-tasub2subb)
 - [Interfaces](#interfaces)
 	- [Composites](#composites)
 	- [Transitions](#transitions)
@@ -72,7 +72,7 @@ Switch from full screen to a composite of both sources can be done by blending t
 ![pip-pip transition](images/pip-pip.gif)
 ![sidebysidepreview-sidebysidepreview transition](images/sidebysidepreview-sidebysidepreview.gif)
 
-To switch between A and B within a composite an animation is preferable. In some composites like _picture-in-picture_ (see picture in the middle) the second source (B) is overlapping the first one (A) and so the *z-order* (order in which the frames have to be drawn) has to be flipped within a transition to get a proper effect.
+To switch between A and B within a composite an animation is preferable. In some composites like _picture-in-picture_ (see in the middle) the second source (B) is overlapping the first one (A) and so the *z-order* (order in which the frames have to be drawn) has to be flipped within a transition to get a proper effect.
 
 To guarantee that this is possible transitions can be improved by inserting so-called __intermediate composites__ which add __key frames__ for both sources in which they do not overlap and so bring a chance to do the z-order swap.
 _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth motion between __*t*(A,B)__ &harr; __*t'*(A,B)__ &harr; __*t*(B,A)__. You even can use multiple intermediate composites within the same transition, if you like.
@@ -85,7 +85,7 @@ _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth mot
 
 Switching the composite while leaving the sources A and B untouched is similar to the previous case __*t*(A,B)__ &harr; __*t*(B,A)__ except that there is usually no need to have intermediate composites to switch the z-order because A and B remain unswapped.
 
-### *s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>), *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>)
+### *s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>) or *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B)
 
 Switching one of both sources to another input channel can lead to a three sources scenario which is currently not covered by _voctomix_ __transitions__ but shall be part of *future development*.
 
@@ -94,11 +94,11 @@ Switching one of both sources to another input channel can lead to a three sourc
 To use the following code you first need to import some stuff.
 
 ```python
-from transitions import Transitions, Composites, L, T, R, B, X, Y
+from transitions import Transitions, Composites
 ```
 
-`L`, `T`, `R` and `B` are not mandatory but may be helpful when accessing the coordinates of the resulting animation frames.
-`X` and `Y` can be used to access width amd height in `size`.
+Maybe importing `L`, `T`, `R` and `B` is a good idea too because it can be helpful when accessing the coordinates of the resulting animation frames.
+`X` and `Y` can be used to access width and height in `size`.
 
 
 ### Composites
@@ -116,19 +116,11 @@ Additionally you have to give `size` which must be a list including _width_ and 
 It is an external parameter and should be given by your compositor configuration.
 `size` will be used to calculate coordinates from any proportional floating point values inside the configuration and for calculating source related coordinates of any cropping.
 
-The return value is a dictonary of `string` &harr; `Composite`.
+The return value is a dictonary of `string` &rarr; `Composite`.
+
+`configure()` may throw an `RuntimeError` exception when parsing the syntax causes problems.
 
 In *future development* this could also take different `size` values for each source too.
-
-#### Equivalent Composites
-
-A word about the equality of composites in the meaning of there appearance:
-
-A frame of size `[0,0]` is invisible like one with an alpha value of `0`.
-Also a composite of two frames where one is overlapping the other completely includes one invisible frame.
-So these composites may be treated as equivalent when using `Transition.find()` if one frame differs in both composites by some properties but is overall invisible in both.
-
-This is why `Transition.find()` (see below) is quite intuitive in finding matching transitions.
 
 ### Transitions
 
@@ -142,13 +134,25 @@ def configure(cfg, composites, fps=25):
 ```
 Generates all transitions configured by the list of named configuration values in dictonary `cfg` (`string` &rarr; `string`) by using the given `composites` and `fps` (frames per second) and return them in a dictonary of `string` &rarr; `Transition`.
 
+`configure()` may throw an `RuntimeError` exception when parsing the syntax causes problems.
+
 #### Transitions.find()
 Fetch a transition whose beginning and ending is matching the given composites.
 ```python
-def find(begin, _end, transitions):
+def find(begin, end, transitions):
 ```
-Searches in the given `transitions` for a transition that fades `begin` to `_end`.
-In a second step also generates reversed versions of transitions that matches that way.
+Searches in the given dictionary `transitions` for a transition that fades `begin` to `end`.
+In a second step also checks if reversed versions transitions match.
+If a transition was found a tuple of it's name and the transition will be returned - otherwise `None`.
+
+##### Equivalent Composites
+
+A word about the equality of composites in the meaning of their appearance:
+
+A frame of size `[0,0]` is invisible like one with an alpha value of `0`.
+Also a composite of two frames where one is opaque and overlapping the other completely includes one invisible frame.
+So these composites may be treated as equivalent when using `Transition.find()` if one frame differs in both composites by some properties but is overall invisible in both.
+This is why `Transition.find()` is quite intuitive in finding matching transitions.
 
 In *future development* this could easily return all matching transitions to add a randomizer or so.
 
@@ -167,7 +171,9 @@ Currently it is only used within the _Transition Tester_ to generate test output
 ### Transition
 
 A transition consists of a list of composites.
-These composites can be two or more in a list of __key composites__ to generate an animation for or a list of composites which describe an already generated animation and so a ready-to-go transition.
+These composites can be either:
+- two or more in a list of __key composites__ to generate an animation for
+- or a list of composites which describe an already generated animation and so a ready-to-go transition.
 
 #### Transition.frames()
 Returns the number of composites stored in this transition.
@@ -195,6 +201,13 @@ Using this information is stronlgy recommended to get smooth results, when using
 ### Composite
 
 A `Composite` instance includes two frames for source A and B and includes no functions you need to know about to use _voctomix_ __transitions__.
+
+#### Composite.inter
+Marks intermediate composites if `True`.
+```
+self.inter = False
+```
+Intermediate composites can be marked by this flag to avoid their appearance in an UI selection for example.
 
 ### Frame
 
@@ -228,7 +241,7 @@ Because cropping is a property of the video source these values will be related 
 #### Frame.key
 This member is `True` if this is a key frame loaded from the configuration or `False` if it was generated by interpolation.
 ```python
-self.key = key
+self.key = False
 ```
 
 #### Frame.cropped()
@@ -241,7 +254,7 @@ Use this to get the resulting frame's extent which will be visible in the image 
 
 ## Configuration
 
-Configuration is done with an INI file like all the other voctomix configuration.
+Configuration is done with an INI file like all the other _voctomix_ configuration.
 
 Additionally we like to leave the configuration as easy and compatible as possible to former configurations.
 Because we also like to increase the flexibility, any unification of the composites does indeed lead to a quite different configuration format.
@@ -251,22 +264,29 @@ To keep migration easy the basic options and values are mostly just reordered or
 
 List of configurations of custom named composites for mixing video sources A and B.
 
-Attribute       | Format (see below)| Default (when absent)
-----------------|-------------------|-----------------------------------------
-_name_`.a`      | RECT              | no output (like `0/0 0x0`)
-_name_`.b`      | RECT              | no output
-_name_`.crop-a` | CROP              | no cropping (like `0` or `0/0/0/0`)
-_name_`.crop-b` | CROP              | no cropping
-_name_`.alpha-a`| ALPHA             | opaque (like `255` or `1.0`)
-_name_`.alpha-b`| ALPHA             | opaque
-_name_`.inter`  | BOOL              | not intermediate
+Attribute       | Format | Default     | Description
+----------------|--------|-------------|------------------------------
+_name_`.a`      | RECT   | no output   | position and size of frame A
+_name_`.b`      | RECT   | no output   | position and size of frame B
+_name_`.crop-a` | CROP   | no cropping | cropping borders of frame A
+_name_`.crop-b` | CROP   | no cropping | cropping borders of frame B
+_name_`.alpha-a`| ALPHA  | opaque      | opacity of frame A
+_name_`.alpha-b`| ALPHA  | opaque      | opacity of frame B
+
+So a default frame without any attributes is invisble by his zero extent.
 
 #### _name_
-All attributes begin with the composite name followed by a dot `.` and the attribute's name.
+All attributes begin with the composite's name followed by a dot `.` and the attribute's name.
 A composite can be freely named but _name_ must be unique.
 
+#### Absolute and Proportional Coordinates
+
+In __RECT__ and __CROP__ you may decide if you like to use _absolute pixel coordinates_ or _proportional floating point values_.
+Using proportional values is often an advantage because you can easily change the full screen size once and all other pixel values will be automatically calculated with that size.
+This enables you to use the same composites configuration with different resolutions but similar apect ratio.
+
 #### RECT
-Rectangular coordinates are given in diffrent formats like: `X/Y WxH`, `POS WxH`, `X/Y SIZE`, `POS SIZE` or `*`.
+Rectangular coordinates are given in different formats like: `X/Y WxH`, `POS WxH`, `X/Y SIZE`, `POS SIZE` or `*`.
 
 Whereat `X`,`Y`,`W`,`H` can be mixed integer pixel coordinates or float proportions.
 `POS` and `SIZE` need to be float proportions.
@@ -295,7 +315,7 @@ proportions.
 c.crop-a = 0/100/0/100       ; source A pixel cropping borders with format 'L/T/R/B'
 ```
 ```ini
-c.crop-a = 0.0/0.2           ; source A float proportional borders with format 'LR TB'
+c.crop-a = 0.0/0.2           ; source A float proportional borders with format 'LR/TB'
 ```
 ```ini
 c.crop-b = 0.1               ; source B 10% from each border in format 'LRTB'
@@ -303,28 +323,13 @@ c.crop-b = 0.1               ; source B 10% from each border in format 'LRTB'
 
 #### ALPHA
 
-Integer value in the range between `0` (invisible) and `255` (opaque) or float value between `0.0` (invisible) and `1.0` or `*` (both opaque)
+Integer value in the range between `0` (invisible) and `255` (opaque) or float value between `0.0` (invisible) and `1.0` (opaque) or `*` (also opaque).
 
 ##### Examples
 ```ini
 c.alpha-a = *                 ; opaque source A using '*'
 c.alpha-b = 0.5               ; 50% semitransparent source B as float
 ```
-
-#### BOOL
-
-Some value. If non-empty the option will be set (e.g. `yes`)
-
-##### Examples
-```ini
-c.inter = yes                 ; make 'c' an intermediate composite
-```
-
-#### Absolute and Proportional Coordinates
-
-In __RECT__ and __CROP__ you may decide if you like to use _absolute pixel coordinates_ or _proportional floating point values_.
-Using proportional values is often an advantage because you can easily change the full screen size once and all other pixel values will be automatically calculated with that size.
-This enables you to use the same composites configuration with different resolutions but similar apect ratio.
 
 ### Configure Transitions
 
@@ -425,24 +430,97 @@ The following configuration file was used to generate that animation:
 
 ```ini
 [output]
-; full screen size in pixel
+; full screen size in pixels
 size    = 960x540
 ; frames per second to render
 fps     = 25
 
 [composites]
-; picture-in-picture composite
-pip.a                               = *                 ; full screen
-pip.b                               = 0.83/0.82 0.16    ; lower-right corner with 16% size
+; Frame A full screen
+pip.a                 = *
+; frame B lower-right corner with 16% size
+pip.b                 = 0.83/0.82 0.16
 
-; side-by-side composite
-sidebyside.a                        = 0.008/0.25 0.49   ; left-middle nearly half size
-sidebyside.b                        = 0.503/0.25 0.49   ; right-middle nearly half size
+; left-middle nearly half size
+sidebyside.a          = 0.008/0.25 0.49
+; right-middle nearly half size
+sidebyside.b          = 0.503/0.25 0.49
 
 [transitions]
 ; transition from pip to pip (swapped) over sidebyside within 1.5 seconds
-pip-pip                             = 1500, pip / sidebyside / pip
+pip-pip               = 1500, pip / sidebyside / pip
 ```
+
+### Using verbose mode
+
+In verbose mode you can see more information about how a transition will be found and what it's data looks like:
+
+```raw
+▶ python3 testtransition.py -vvv pip
+reading composites from configuration...
+read 2 composites:
+	sidebyside
+	pip
+reading transitions from configuration...
+calculating transition 'pip-pip'
+read 1 transition(s):
+	pip-pip
+using 1 target composite(s):
+	pip
+generated sequence (2 items):
+	pip
+	pip
+
+request transition: pip -> pip
+	    Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
+	     *  A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)
+	     *  A( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00) (swapped)
+trying transition: pip-pip
+	    Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
+	     *  A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)
+	     *  A( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)
+found transition: pip-pip
+transition found: pip -> pip-pip -> pip
+	No. Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
+	  0  *  A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)
+	  1     A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)
+	  2     A(   4,   0   952, 533   255     0,   0,   0,   0  0.00,0.00)	B( 792, 436   953, 526   255     0,   0,   0,   0  0.00,0.00)
+	  3     A(  20,   2   933, 516   255     0,   0,   0,   0  0.00,0.00)	B( 783, 423   966, 526   255     0,   0,   0,   0  0.00,0.00)
+	  4     A(  44,   4   903, 487   255     0,   0,   0,   0  0.00,0.00)	B( 768, 402   986, 525   255     0,   0,   0,   0  0.00,0.00)
+	  5     A(  70,   8   861, 453   255     0,   0,   0,   0  0.00,0.00)	B( 746, 373  1009, 520   255     0,   0,   0,   0  0.00,0.00)
+	  6     A(  93,  14   808, 416   255     0,   0,   0,   0  0.00,0.00)	B( 718, 338  1030, 513   255     0,   0,   0,   0  0.00,0.00)
+	  7     A( 108,  23   747, 382   255     0,   0,   0,   0  0.00,0.00)	B( 683, 298  1043, 501   255     0,   0,   0,   0  0.00,0.00)
+	  8     A( 108,  35   679, 356   255     0,   0,   0,   0  0.00,0.00)	B( 641, 256  1046, 483   255     0,   0,   0,   0  0.00,0.00)
+	  9     A(  90,  52   607, 342   255     0,   0,   0,   0  0.00,0.00)	B( 594, 214  1034, 461   255     0,   0,   0,   0  0.00,0.00)
+	----------------------------------------------------------- FLIP SOURCES ------------------------------------------------------------
+	 10     B(  51,  80   533, 351   255     0,   0,   0,   0  0.00,0.00)	A( 540, 173  1002, 433   255     0,   0,   0,   0  0.00,0.00)
+	 11  *  B(   7, 135   477, 399   255     0,   0,   0,   0  0.00,0.00)	A( 482, 135   952, 399   255     0,   0,   0,   0  0.00,0.00)
+	 12     B(   7, 134   477, 398   255     0,   0,   0,   0  0.00,0.00)	A( 482, 135   952, 399   255     0,   0,   0,   0  0.00,0.00)
+	 13     B(  49, 215   511, 475   255     0,   0,   0,   0  0.00,0.00)	A( 412,  97   894, 368   255     0,   0,   0,   0  0.00,0.00)
+	 14     B( 141, 269   581, 516   255     0,   0,   0,   0  0.00,0.00)	A( 341,  66   858, 356   255     0,   0,   0,   0  0.00,0.00)
+	 15     B( 250, 312   655, 539   255     0,   0,   0,   0  0.00,0.00)	A( 272,  43   843, 364   255     0,   0,   0,   0  0.00,0.00)
+	 16     B( 365, 347   725, 550   255     0,   0,   0,   0  0.00,0.00)	A( 206,  26   845, 385   255     0,   0,   0,   0  0.00,0.00)
+	 17     B( 477, 376   789, 551   255     0,   0,   0,   0  0.00,0.00)	A( 148,  14   863, 416   255     0,   0,   0,   0  0.00,0.00)
+	 18     B( 581, 400   844, 547   255     0,   0,   0,   0  0.00,0.00)	A(  96,   7   887, 452   255     0,   0,   0,   0  0.00,0.00)
+	 19     B( 670, 418   888, 541   255     0,   0,   0,   0  0.00,0.00)	A(  55,   3   914, 486   255     0,   0,   0,   0  0.00,0.00)
+	 20     B( 737, 431   920, 534   255     0,   0,   0,   0  0.00,0.00)	A(  25,   1   938, 515   255     0,   0,   0,   0  0.00,0.00)
+	 21     B( 780, 439   941, 529   255     0,   0,   0,   0  0.00,0.00)	A(   7,   0   955, 533   255     0,   0,   0,   0  0.00,0.00)
+	 22  *  B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)	A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)
+
+1 transition(s) available:
+	pip-pip
+```
+
+As you can see the tripple verbose mode (using option `-vvv`) prints out a list of loaded composites and found transitions too, like option `-l` does.
+
+Additionally it prints out
+- the composites used to request the transition `pip -> pip` including a mark `(swapped)` at the right margin indicates that this transition has the same begin and end frame and so it will be swapped,
+- the searched transitions (in this case there is only one) and
+- the long table which shows the calculated animation for this transition.
+
+In this table you can see the _flipping point_ at `--- FLIP SOURCES ---` from which on the lettes for A and B are swapped.
+
+You can also see the `*` signs which mark the used key frames from the composites out of the configuration.
 
 ### Code
 
@@ -501,7 +579,7 @@ def draw_transition(size, transition, name=None):
 Producing images of `transtion` in the given `size`.
 
 ## TODO
-#### Integration into exisiting voctomix
+#### Integration into exisiting _voctomix_
 
 To get out video transition effect within _voctomix_ the configuration needs a format update and the compositor must be extended by the ability to switch the compositing scenario quickly frame by frame synchronized with the play time.
 
