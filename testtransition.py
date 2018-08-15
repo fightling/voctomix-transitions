@@ -91,9 +91,11 @@ def read_config(filename):
     # maybe overwirte targets by arguments
     if Args.composite:
         # check for composites in arguments
-        targets = Args.composite
-
-    # get all possible transitions between composites
+        sequence = Args.composite
+    else:
+        # generate sequence of targets
+        sequence = Transitions.travel(targets)
+    print("generating sequence:\n\t%s" % '\n\t'.join(sequence))
     log.debug("using %d target composite(s):\n\t%s\t" %
               (len(targets), '\n\t'.join(targets)))
     # list targets and itermediates
@@ -103,7 +105,7 @@ def read_config(filename):
         print("%d intermediate composite(s):\n\t%s\t" %
               (len(intermediates), '\n\t'.join(sorted(intermediates))))
     # return config
-    return size, fps, targets, transitions, composites
+    return size, fps, sequence, transitions, composites
 
 
 def draw_transition(size, transition, name=None):
@@ -236,10 +238,8 @@ def save_transition_gif(filename, size, name, animation, time):
             call(["rm"] + imagenames)
 
 
-def render_sequence(size, fps, targets, transitions, composites):
+def render_sequence(size, fps, sequence, transitions, composites):
     global log
-    # generate sequence of targets
-    sequence = Transitions.travel(targets)
     log.debug("generated sequence (%d items):\n\t%s\t" %
               (len(sequence), '\n\t'.join(sequence)))
     # begin at first transition
