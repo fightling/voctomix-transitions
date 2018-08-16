@@ -54,12 +54,12 @@ class Composite:
         return "%s A%s\tB%s" % (" * " if self.A().key else
                                 "   ", self.A(), self.B())
 
-    def __eq__(self, other):
+    def equals(self, other, treat_covered_as_invisible):
         """ compare two composites if they are looking the same
             (e.g. a rectangle with size 0x0=looks the same as one with alpha=0
             and so it is treated as equal here)
         """
-        if not (self.A() == other.A() or (self.covered() and other.covered())):
+        if not (self.A() == other.A() or (treat_covered_as_invisible and self.covered() and other.covered())):
             return False
         elif not (self.B() == other.B() or (self.B().invisible() and other.B().invisible())):
             return False

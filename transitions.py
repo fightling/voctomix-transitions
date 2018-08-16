@@ -84,40 +84,25 @@ class Transitions:
         assert type(begin) is Composite
         assert type(_end) is Composite
         assert type(transitions) is dict
-
         # swap target A/B if requested begin and end is the same
         end = _end.swapped() if begin == _end else _end
         # log caller request
         log.debug("\t    %s\n\t    %s\n\t    %s %s" %
                   (Composite.str_title(), begin, end, "(swapped)" if end != _end else ""))
-        # try to find a transition with the given start and beginning composite
-        result = None
-        # search in all known transitions for matching start and end frames
-        for t_name, t in transitions.items():
-            log.debug("trying transition: %s\n\t    %s\n\t    %s\n\t    %s" %
-                      (t_name, Composite.str_title(), t.begin(), t.end()))
-            if begin == t.begin() and end == t.end():
-                result = t_name, t
-                break
-        # if nothing was found
-        if not result:
-            # try searching in reversed transtions
-            for t_name, t in transitions.items():
-                log.debug("trying transition: %s (reversed)\n\t    %s\n\t    %s\n\t    %s" %
-                          (t_name, Composite.str_title(), t.begin(), t.end()))
-                if begin == t.end() and end == t.begin():
-                    result = t_name + " (reversed)", t.reversed()
-                    break
-        # still nothing found?
-        if not result:
-            # log warning
-            log.warning("no transition found for:\n\t    %s\n\t    %s" %
-                        (begin, end))
-            # help yourself!
-            return None, None
-        # log result
-        log.debug("found transition: %s" % result[0])
-        return result
+        for (r, c) in ((False, False), (True, False), (False, True), (True, True)):
+            # try to find a transition with the given start and beginning
+            # composite
+            result = search(begin, end, transitions, r, c)
+            # if nothing was found
+            if result:
+                # log result
+                log.debug("found transition: %s" % result[0])
+                return result
+        # log warning
+        log.warning("no transition found for:\n\t    %s\n\t    %s" %
+                    (begin, end))
+        # help yourself!
+        return None, None
 
 
 class Transition:
@@ -422,3 +407,26 @@ def is_in(sequence, part):
         if sequence[i: i + 2] == part:
             return True
     return False
+
+
+def search(_begin, _end, transitions, reversed, treat_covered_as_invisible):
+    """ Searches in the given transitions for a transition that fades begin
+        to _end.
+    """
+    # try to find a transition with the given start and beginning composite
+    result = None
+    begin, end = (_end, _begin) if reversed else (_begin, _end)
+    # search in all known transitions for matching start and end frames
+    for t_name, t in transitions.items():
+        log.debug("trying transition: %s %s %s\n\t    %s\n\t    %s\n\t    %s" %
+                  (t_name,
+                   "(reversed)" if reversed else "",
+                   "(covered)" if reversed else "",
+                   Composite.str_title(),
+                   t.begin(), t.end()))
+        if begin.equals(t.begin(), treat_covered_as_invisible) and \
+                end.equals(t.end(), treat_covered_as_invisible):
+            if reversed:
+                return t_name + " (reversed)", t.reversed()
+            else:
+                return t_name, t
