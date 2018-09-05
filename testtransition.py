@@ -73,37 +73,38 @@ def read_config(filename):
     log.info("reading composites from configuration...")
     composites = Composites.configure(config.items('composites'), size)
     log.debug("read %d composites:\n\t%s\t" %
-              (len(composites), '\n\t'.join(composites)))
+              (len(composites), '\n\t'.join(sorted(composites))))
+    # maybe overwirte targets by arguments
+    if Args.composite:
+        # check for composites in arguments
+        targets = [composites[c] for c in set(Args.composite)]
+    else:
+        # list of all relevant composites we like to target
+        targets = Composites.targets(composites)
+    intermediates = Composites.intermediates(composites)
+    # list targets and itermediates
+    if Args.list:
+        print("%d targetable composite(s):\n\t%s\t" %
+              (len(targets), '\n\t'.join(sorted([t.name for t in targets]))))
+        print("%d intermediate composite(s):\n\t%s\t" %
+              (len(intermediates), '\n\t'.join(sorted([t.name for t in intermediates]))))
     # read transitions from configuration
     log.info("reading transitions from configuration...")
     transitions = Transitions.configure(
-        config.items('transitions'), composites, fps)
-    log.debug("read %d transition(s):\n\t%s\t" %
-              (len(transitions), '\n\t'.join(transitions)))
-    # list of all relevant composites we like to target
-    targets = []
-    intermediates = []
-    for c_name, c in composites.items():
-        if c.inter:
-            intermediates.append(c_name)
-        else:
-            targets.append(c_name)
+        config.items('transitions'), composites, targets, fps)
+    log.info("read %d transition(s)" % transitions.count())
+    if Args.list:
+        print("transition table:\n%s" % transitions)
     # maybe overwirte targets by arguments
     if Args.composite:
         # check for composites in arguments
         sequence = Args.composite
     else:
         # generate sequence of targets
-        sequence = Transitions.travel(targets)
-    print("generating sequence:\n\t%s" % '\n\t'.join(sequence))
+        sequence = Transitions.travel([t.name for t in targets])
     log.debug("using %d target composite(s):\n\t%s\t" %
-              (len(targets), '\n\t'.join(targets)))
-    # list targets and itermediates
-    if Args.list:
-        print("%d targetable composite(s):\n\t%s\t" %
-              (len(targets), '\n\t'.join(sorted(targets))))
-        print("%d intermediate composite(s):\n\t%s\t" %
-              (len(intermediates), '\n\t'.join(sorted(intermediates))))
+              (len(targets), '\n\t'.join([t.name for t in targets])))
+
     # return config
     return size, fps, sequence, transitions, composites
 
@@ -112,7 +113,8 @@ def draw_transition(size, transition, name=None):
     # indices in size and tsize
     X, Y = 0, 1
     # get a font
-    font = ImageFont.truetype("Arial.ttf", 20)
+    font = ImageFont.truetype("FreeSans.ttf",
+                              11 if size[X] < 500 else 20)
     # get where to flip sources
     flip_at = transition.flip()
     # animation as a list of images
@@ -139,7 +141,7 @@ def draw_transition(size, transition, name=None):
                         fill=(0, 0, 0, 128))
         # simulate swapping sources
         a, b = transition.A(i), transition.B(i)
-        if i >= flip_at:
+        if flip_at and i >= flip_at:
             a, b = b, a
             if Args.title:
                 text = "(swapped sources)"
@@ -190,13 +192,20 @@ def draw_transition(size, transition, name=None):
 
         if Args.title:
             if not name is None:
-                text = "%s - Frame %d" % (name, i)
+                text = name
                 # measure text size
                 textsize = drawFg.textsize(text, font=font)
                 # draw info text
                 drawFg.text([(size[X] - textsize[X]) / 2,
                              size[Y] - textsize[Y] * 4],
                             text, font=font)
+            text = "Frame %d" % i
+            # measure text size
+            textsize = drawFg.textsize(text, font=font)
+            # draw info text
+            drawFg.text([(size[X] - textsize[X]) / 2,
+                         textsize[Y]],
+                        text, font=font)
         # silly way to draw on RGBA frame buffer, hey - it's python
         images.append(
             Image.alpha_composite(
@@ -246,40 +255,37 @@ def render_sequence(size, fps, sequence, transitions, composites):
     prev_name = sequence[0]
     prev = composites[prev_name]
     # cound findings
-    not_found = 0
+    not_found = []
     found = []
     # process sequence through all possible transitions
     for c_name in sequence[1:]:
-        # fetch prev comüosite
+        # fetch prev composite
         c = composites[c_name]
         # get the right transtion between prev and c
-        log.info("\nrequest transition: %s -> %s" % (prev_name, c_name))
+        log.debug("request transition: %s -> %s" % (prev_name, c_name))
         # actually search for a transitions that does a fade between prev and c
-        t_name, t = Transitions.find(prev, c, transitions)
+        transition = transitions.find(prev, c)
         # count findings
-        if not t_name:
+        if not transition:
             # report fetched transition
             log.warning("no transition found for: %s -> %s" %
                         (prev_name, c_name))
-            not_found += 1
+            not_found.append("%s -> %s" % (prev_name, c_name))
         else:
             # report fetched transition
-            log.info("transition found: %s -> %s -> %s" %
-                     (prev_name, t_name, c_name))
-            log.debug(t)
-            found.append(t_name)
-        # if transition was found
-        if t:
+            log.debug("transition found: %s -> %s -> %s\n%s" %
+                      (prev_name, transition.name(), c_name, transition))
+            found.append(transition.name())
             # get sequence frames
-            frames = t.frames()
+            frames = transition.frames()
             if Args.generate:
-                name = "%s-%s" % (prev_name, c_name)
+                name = transition.name() + " = %s -> %s" % (prev_name, c_name)
                 filename = "%s" % len(found) if Args.number else name
                 print("saving transition animation file '%s.gif' (%s, %d frames)..." %
-                      (filename, t_name, frames))
+                      (filename, transition.name(), frames))
                 # generate test images for transtion and save into animated GIF
                 save_transition_gif(filename, size, name,
-                                    t, frames / fps * 1000.0)
+                                    transition, frames / fps * 1000.0)
         # remember current transition as next previous
         prev_name, prev = c_name, c
     # report findings
@@ -288,7 +294,8 @@ def render_sequence(size, fps, sequence, transitions, composites):
             print("%d transition(s) available:\n\t%s" %
                   (len(found), '\n\t'.join(sorted(found))))
     if not_found:
-        log.warning("%d transition(s) could NOT be found!" % not_found)
+        print("%d transition(s) could NOT be found:\n\t%s" %
+              (len(not_found), "\n\t".join(sorted(not_found))))
 
 
 read_arguments()

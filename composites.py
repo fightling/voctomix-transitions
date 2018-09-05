@@ -14,7 +14,7 @@ class Composites:
     """ a namespace for composite related methods
     """
 
-    def configure(cfg, size):
+    def configure(cfg, size, add_swap=True):
         """ read INI like configuration from <cfg> and return all the defined
             composites. <size> is the overall frame size which all proportional
             (floating point) coordinates are related to.
@@ -22,37 +22,55 @@ class Composites:
         # prepare resulting composites dictonary
         composites = dict()
         # walk through composites configuration
-        for c_name, c_val in dict(cfg).items():
+        for c_name, c_val in cfg:
             if '.' not in c_name:
-                raise RuntimeError("syntax error in composite name '{}' "
+                raise RuntimeError("syntax error in composite config '{}' "
                                    "(must be: 'name.attribute')"
                                    .format(c_name))
             # split name into name and attribute
             name, attr = c_name.lower().rsplit('.', 1)
             if name not in composites:
-                composites[name] = Composite()
+                composites[name] = Composite(name)
             try:
                 composites[name].config(attr, c_val, size)
             except RuntimeError as err:
                 raise RuntimeError(
                     "syntax error in composite config value at '{}':\n{}"
                     .format(name, err))
+        if add_swap:
+            add_swapped_targets(composites)
         return composites
+
+    def targets(composites):
+        result = []
+        for c_name, c in composites.items():
+            if not c.inter:
+                result.append(c)
+        return result
+
+    def intermediates(composites):
+        result = []
+        for c_name, c in composites.items():
+            if c.inter:
+                result.append(c)
+        return result
 
 
 class Composite:
 
-    def __init__(self, a=Frame(True), b=Frame(True)):
+    def __init__(self, name, a=Frame(True), b=Frame(True)):
+        assert type(name) is str or not name
+        self.name = name
         self.frame = [copy.deepcopy(a), copy.deepcopy(b)]
         self.default = [None, None]
         self.inter = None
 
     def str_title():
-        return "Key A%s\tB%s" % (Frame.str_title(), Frame.str_title())
+        return "Key A%s\tB%s  Name" % (Frame.str_title(), Frame.str_title())
 
     def __str__(self):
-        return "%s A%s\tB%s" % (" * " if self.A().key else
-                                "   ", self.A(), self.B())
+        return "%s A%s\tB%s  %s" % (" * " if self.A().key else "   ",
+                                    self.A(), self.B(), self.name)
 
     def equals(self, other, treat_covered_as_invisible):
         """ compare two composites if they are looking the same
@@ -71,14 +89,27 @@ class Composite:
     def B(self):
         return self.frame[1]
 
+    def swap(self):
+        """ swap A and B source items
+        """
+        # then swap frames
+        self.frame = self.frame[::-1]
+        self.name = swap_name(self.name)
+
     def swapped(self):
         """ swap A and B source items
         """
         # deep copy everything
         s = copy.deepcopy(self)
         # then swap frames
-        s.frame = s.frame[::-1]
+        s.swap()
         return s
+
+    def key(self):
+        for f in self.frame:
+            if f.key:
+                return True
+        return False
 
     def config(self, attr, value, size):
         """ set value <value> from INI attribute <attr>.
@@ -102,9 +133,8 @@ class Composite:
             self.frame[1].alpha = str2alpha(value)
         elif attr == 'inter':
             self.inter = value
-        # re-calculate zoom factors
-        for f in self.frame:
-            f.calc_zoom(size)
+        self.frame[0].original_size = size
+        self.frame[1].original_size = size
 
     def covered(self):
         """ check if below is completely covered by above
@@ -123,6 +153,27 @@ class Composite:
                  bc[T] >= ac[T] and
                  bc[R] <= ac[R] and
                  bc[B] <= ac[B]))
+
+
+def add_swapped_targets(composites):
+    result = dict()
+    for c_name, c in composites.items():
+        if not c.inter:
+            inc = True
+            for v_name, v in composites.items():
+                if v.equals(c.swapped(), True) and not v.inter:
+                    log.debug("skipping auto-swap of %s because %s = %s" %
+                              (c_name, swap_name(c_name), v_name))
+                    inc = False
+                    break
+            if inc:
+                log.debug("adding auto-swapped target %s from %s" %
+                          (swap_name(c_name), c_name))
+                result[swap_name(c_name)] = c.swapped()
+    return composites.update(result)
+
+
+def swap_name(name): return name[1:] if name[0] == '^' else "^" + name
 
 
 def absolute(str, max):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # for debug logging
 import logging
-from composites import Composite, Composites
+from composites import Composite, Composites, swap_name
 from frame import Frame, L, R, T, B, X, Y
 # for calculating square roots
 import math
@@ -9,6 +9,8 @@ import math
 from scipy import interpolate as spi
 # for converting arrays
 import numpy as np
+# for cloning objects
+import copy
 
 V = 2  # distance (velocity) index
 
@@ -17,34 +19,93 @@ log = logging.getLogger('Transitions')
 
 class Transitions:
 
-    def configure(cfg, composites, fps=25):
+    def __init__(self, targets):
+        self.transitions = [[None] * len(targets) for n in targets]
+        self.targets = targets
+
+    def __str__(self):
+        # print transition table
+        hr = ("─" * 17) + ("┼%s" % ("─" * 17)) * (len(self.targets)) + "\n"
+        result = "%s\n" % "".join(["%16s " % ""] + ["│%16s " %
+                                                    t.name for t in self.targets])
+        for i in range(len(self.transitions)):
+            result += hr
+            result += "%s\n" % "".join(["%16s " % self.targets[i].name] +
+                                       ["│%16s " % (x.name() if x else "-")
+                                        for x in self.transitions[i]]
+                                       )
+        return result
+
+    def find(self, begin, end):
+        for b in range(len(self.targets)):
+            for e in range(len(self.targets)):
+                if self.targets[b].equals(begin, True) and self.targets[e].equals(end, True):
+                    return self.transitions[b][e]
+        return None
+
+    def add(self, transition, frames):
+        for begin in range(len(self.targets)):
+            for end in range(len(self.targets)):
+                if self.targets[begin].equals(transition.begin(), True) and self.targets[end].equals(transition.end(), True):
+                    if not self.transitions[begin][end]:
+                        log.debug("adding transition %s = %s -> %s\n%s" %
+                                  (transition.name(), self.targets[begin].name, self.targets[end].name, transition))
+                        t = copy.deepcopy(transition)
+                        t.calculate(frames)
+                        self.transitions[begin][end] = t
+
+    def count(self):
+        n = 0
+        for tt in self.transitions:
+            for t in tt:
+                if t:
+                    n += 1
+        return n
+
+    def configure(cfg, composites, targets, fps=25):
         """ generate all transitions configured in the INI-like configuration
             string in <cfg> by using the given <composites> and return them
             in a dictonary
         """
-        # prepare dictonary
-        transitions = dict()
+        def index(composite):
+            for i in range(len(targets)):
+                if composites[targets[i]].equals(composite, True):
+                    return i
+            return None
+
+        # prepare result
+        transitions = Transitions(targets)
+
+        def convert(keys, conv):
+            return [keys, keys.reversed(), keys.swapped(), keys.reversed().swapped()][conv]
+
         # walk through all items within the configuration string
-        for t_name, t in dict(cfg).items():
+        for t_name, t in cfg:
             # split animation time and composite sequence from t
             time, sequence = t.split(',')
             time = int(time)
             # calculate frames needed for that animation time
             frames = fps * float(time) / 1000.0
-            # prepare list of key frame composites
-            keys = []
-            try:
-                # walk trough composite sequence
-                for c_name in [x.strip() for x in sequence.split('/')]:
-                    # find a composite with that name
-                    keys.append(composites[c_name])
-            # log any failed find
-            except KeyError as err:
-                raise RuntimeError(
-                    'composite "{}" could not be found in transition {}'.format(err, name))
-            # calculate that transition and place it into the dictonary
-            log.debug("calculating transition '%s'" % t_name)
-            transitions[t_name] = Transition.calculate(keys, frames - 1)
+            # split sequence list into key frames
+            sequence = [x.strip() for x in sequence.split('/')]
+            for conversion in range(4):
+                for seq in parse_asterisk(sequence, targets):
+                    # prepare list of key frame composites
+                    keys = Transition(t_name)
+                    try:
+                        # walk trough composite sequence
+                        for c_name in seq:
+                            if c_name[0] == '^':
+                                # find a composite with that name
+                                keys.append(composites[c_name[1:]].swapped())
+                            else:
+                                # find a composite with that name
+                                keys.append(composites[c_name])
+                    # log any failed find
+                    except KeyError as err:
+                        raise RuntimeError(
+                            'composite "{}" could not be found in transition {}'.format(err, t_name))
+                    transitions.add(convert(keys, conversion), frames - 1)
         # return dictonary
         return transitions
 
@@ -76,85 +137,88 @@ class Transitions:
         # no findings
         return None
 
-    def find(begin, _end, transitions):
-        """ Searches in the given transitions for a transition that fades begin
-            to _end. In a second step also generates reversed versions of
-            transitions that matches that way.
-        """
-        assert type(begin) is Composite
-        assert type(_end) is Composite
-        assert type(transitions) is dict
-        # swap target A/B if requested begin and end is the same
-        end = _end.swapped() if begin == _end else _end
-        # log caller request
-        log.debug("\t    %s\n\t    %s\n\t    %s %s" %
-                  (Composite.str_title(), begin, end, "(swapped)" if end != _end else ""))
-        for (r, c) in ((False, False), (True, False), (False, True), (True, True)):
-            # try to find a transition with the given start and beginning
-            # composite
-            result = search(begin, end, transitions, r, c)
-            # if nothing was found
-            if result:
-                # log result
-                log.debug("found transition: %s" % result[0])
-                return result
-        # log warning
-        log.warning("no transition found for:\n\t    %s\n\t    %s" %
-                    (begin, end))
-        # help yourself!
-        return None, None
-
 
 class Transition:
 
-    def __init__(self, a, b=None):
-        # no overloaded constructors available in python m(
-        if b:
-            # got lists of frames in a and b with same length?
-            assert len(a) == len(b)
-            assert type(a[0]) is Frame
-            assert type(b[0]) is Frame
-            # rearrange composites
-            self.composites = [Composite(a[i], b[i]) for i in range(len(a))]
+    def __init__(self, name, a=None, b=None):
+        assert type(name) is str
+        self._name = name
+        if a:
+            # no overloaded constructors available in python m(
+            if b:
+                # got lists of frames in a and b with same length?
+                assert len(a) == len(b)
+                assert type(a[0]) is Frame
+                assert type(b[0]) is Frame
+                # rearrange composites
+                self.composites = [Composite("...", a[i], b[i])
+                                   for i in range(len(a))]
+            else:
+                # if we got only one list then it must be composites
+                assert type(a[0]) is Composite
+                self.composites = a
         else:
-            # if we got only one list then it must be composites
-            assert type(a[0]) is Composite
-            self.composites = a
+            self.composites = []
 
     def __str__(self):
         # remember index when to flip sources A/B
         flip_at = self.flip()
+        str = "\t%s = %s -> %s:\n" % (self.name(),
+                                      self.begin().name, self.end().name)
         # add table title
-        str = "\tNo. %s\n" % Composite.str_title()
+        str += "\tNo. %s\n" % Composite.str_title()
         # add composites until flipping point
-        for i in range(flip_at):
-            str += ("\t%3d %s A%s\tB%s\n" %
-                    (i, " * " if self.A(i).key else "   ", self.A(i), self.B(i)))
+        for i in range(flip_at if flip_at else self.frames()):
+            str += ("\t%3d %s A%s\tB%s  %s\n" %
+                    (i, " * " if self.A(i).key else "   ", self.A(i), self.B(i), self.composites[i].name))
         # add composites behind flipping point
-        if flip_at < self.frames():
+        if flip_at:
             str += ("\t-----------------------------------------------------------"
                     " FLIP SOURCES "
                     "------------------------------------------------------------\n")
             for i in range(flip_at, self.frames()):
-                str += ("\t%3d %s B%s\tA%s\n" %
-                        (i, " * " if self.A(i).key else "   ", self.A(i), self.B(i)))
+                str += ("\t%3d %s B%s\tA%s  %s\n" %
+                        (i, " * " if self.A(i).key else "   ", self.A(i), self.B(i), self.composites[i].name))
         return str
+
+    def phi(self):
+        return self.begin().equals(self.end().swapped(), True)
+
+    def name(self):
+        if self.phi():
+            return "Φ(" + self._name + ")"
+        else:
+            return self._name
+
+    def append(self, composite):
+        assert type(composite) == Composite
+        self.composites.append(composite)
 
     def frames(self): return len(self.composites)
 
-    def A(self, n):
-        assert type(n) is int
-        return self.composites[n].A()
+    def A(self, n=None):
+        if n is None:
+            return [c.A() for c in self.composites]
+        else:
+            assert type(n) is int
+            return self.composites[n].A()
 
-    def B(self, n):
-        assert type(n) is int
-        return self.composites[n].B()
+    def B(self, n=None):
+        if n is None:
+            return [c.B() for c in self.composites]
+        else:
+            assert type(n) is int
+            return self.composites[n].B()
 
-    def begin(self): return Composite(self.A(0), self.B(0))
+    def begin(self): return self.composites[0]
 
-    def end(self): return Composite(self.A(-1), self.B(-1))
+    def end(self): return self.composites[-1]
 
-    def reversed(self): return Transition(self.composites[::-1])
+    def reversed(self):
+        return Transition(self._name + "⁻¹", self.composites[::-1])
+
+    def swapped(self):
+        return Transition(swap_name(self._name), [c.swapped() for c in self.composites])
 
     def append(self, composite):
         assert type(composite) is Composite
@@ -164,38 +228,68 @@ class Transition:
         """ find the first non overlapping rectangle pair within parameters and
             return it's index
         """
-        def overlap(a, b):
-            return (a[L] < b[R] and a[R] > b[L] and a[T] < b[B] and a[B] > b[T])
+        if self.phi():
+            def overlap(a, b):
+                return (a[L] < b[R] and a[R] > b[L] and a[T] < b[B] and a[B] > b[T])
 
-        if self.A(0) == self.B(-1):
-            flip = False
-            for i in range(self.frames() - 1):
-                if not (flip or overlap(self.A(i).cropped(), self.B(i).cropped())):
-                    return i
-            return self.frames() - 1
-        else:
-            return self.frames()
+            if self.A(0) == self.B(-1):
+                for i in range(self.frames() - 1):
+                    if not overlap(self.A(i).cropped(), self.B(i).cropped()):
+                        return i
+                return self.frames() - 1
+        return None
 
-    def calculate(composites, frames, a_corner=(R, T), b_corner=(L, T)):
+    def calculate(self, frames, a_corner=(R, T), b_corner=(L, T)):
         """ calculate a transition between the given composites which shall
             have the given amount of frames. Use a_corner of frames in A and
             b_corner of frames in B to interpolate the animation movement.
         """
-        # extract two lists of frames for use with interpolate()
-        a = [c.A() for c in composites]
-        b = [c.B() for c in composites]
-        # check if begin and end of animation are equal
-        if a[-1] == a[0] and b[-1] == b[0]:
-            # then swap the end composite
-            a[-1], b[-1] = b[-1], a[-1]
-        # generate animation
-        return Transition(interpolate(a, frames, a_corner),
-                          interpolate(b, frames, b_corner))
+        if len(self.composites) != frames:
+            if len(self.composites) != len(self.keys()):
+                log.warning("recalculating transition %s" % self.name())
+                self.composites = self.keys()
+            # calculate that transition and place it into the dictonary
+            log.debug("calculating transition %s = %s" %
+                      (self.name(), "/".join([c.name for c in self.composites])))
+
+            # extract two lists of frames for use with interpolate()
+            a = [c.A() for c in self.composites]
+            b = [c.B() for c in self.composites]
+            # check if begin and end of animation are equal
+            if a[-1] == a[0] and b[-1] == b[0]:
+                # then swap the end composite
+                a[-1], b[-1] = b[-1], a[-1]
+            # generate animation
+            a = interpolate(a, frames, a_corner)
+            b = interpolate(b, frames, b_corner)
+            composites = []
+            j = 0
+            for i in range(len(a)):
+                if a[i].key:
+                    name = self.composites[j].name
+                    j += 1
+                else:
+                    name = "..."
+                composites.append(Composite(name, a[i], b[i]))
+            self.composites = composites
 
     def keys(self):
         """ return the indices of all key composites
         """
-        return [i for i in self.composites if i.A().key]
+        return [i for i in self.composites if i.key()]
+
+
+def parse_asterisk(sequence, composites):
+    sequences = []
+    for k in range(len(sequence)):
+        if sequence[k] == '*':
+            for c in composites:
+                sequences += parse_asterisk(sequence[: k] +
+                                            [c.name] + sequence[k + 1:],
+                                            composites)
+    if not sequences:
+        sequences.append(sequence)
+    return sequences
 
 
 def frange(x, y, jump):
@@ -345,10 +439,7 @@ def morph(begin, end, pt, corner, factor):
     # calculate current alpha value and cropping
     result.alpha = fade(begin.alpha, end.alpha, factor)
     result.crop = fade(begin.crop, end.crop, factor)
-    # try to find the original size by any rectangle
-    s = (begin.original_size(), end.original_size())
-    # recalculate zoom
-    result.calc_zoom(s[0] if s[0] else s[1])
+    result.original_size = begin.original_size
     return result
 
 
@@ -394,7 +485,6 @@ def interpolate(key_frames, num_frames, corner):
                           smooth(j / len(corner_animation)))
             # append to resulting animation
             animation.append(frame)
-            # next animation step
     # append last rectangle from parameters
     animation.append(key_frames[-1])
     # return rectangle animation
@@ -407,26 +497,3 @@ def is_in(sequence, part):
         if sequence[i: i + 2] == part:
             return True
     return False
-
-
-def search(_begin, _end, transitions, reversed, treat_covered_as_invisible):
-    """ Searches in the given transitions for a transition that fades begin
-        to _end.
-    """
-    # try to find a transition with the given start and beginning composite
-    result = None
-    begin, end = (_end, _begin) if reversed else (_begin, _end)
-    # search in all known transitions for matching start and end frames
-    for t_name, t in transitions.items():
-        log.debug("trying transition: %s %s %s\n\t    %s\n\t    %s\n\t    %s" %
-                  (t_name,
-                   "(reversed)" if reversed else "",
-                   "(covered)" if reversed else "",
-                   Composite.str_title(),
-                   t.begin(), t.end()))
-        if begin.equals(t.begin(), treat_covered_as_invisible) and \
-                end.equals(t.end(), treat_covered_as_invisible):
-            if reversed:
-                return t_name + " (reversed)", t.reversed()
-            else:
-                return t_name, t
