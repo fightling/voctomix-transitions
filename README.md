@@ -159,7 +159,7 @@ We mark that swap operation with a `^` sign.
 Put into a formular we can write this as
 
 <center>
-_^t(A,B) = t(A,B)_
+^t(A,B) = t(A,B)
 </center>
 
 ### Transition Operations
@@ -172,7 +172,7 @@ _^t(A,B) = t(A,B)_
 A transition *T* from composite *t<sub>1</sub>* to composite *t<sub>2</sub>* written as...
 
 <center>
-*T* = *t<sub>1</sub>* &rarr; *t<sub>2</sub>*
+T = t<sub>1</sub> &rarr; t<sub>2</sub>
 </center>
 
 ...can be reversed.
@@ -180,13 +180,13 @@ A transition *T* from composite *t<sub>1</sub>* to composite *t<sub>2</sub>* wri
 We mark that reverse operation with an exponent of <sup>`-1`</sup>:
 
 <center>
-*T<sup>-1</sup>* = (*t<sub>1</sub>(A,B)* &rarr; *t<sub>2</sub>*(A,B))<sup>-1</sup> = *t<sub>2</sub>(A,B)* &rarr; *t<sub>1</sub>*(A,B)
+T<sup>-1</sup> = (t<sub>1</sub>(A,B) &rarr; t<sub>2</sub>(A,B))<sup>-1</sup> = t<sub>2</sub>(A,B) &rarr; t<sub>1</sub>(A,B)
 </center>
 
 Or shorter:
 
 <center>
-*T<sup>-1</sup>* = (*t<sub>1</sub>* &rarr; *t<sub>2</sub>*)<sup>-1</sup> = *t<sub>2</sub>* &rarr; *t<sub>1</sub>*
+T<sup>-1</sup> = (t<sub>1</sub> &rarr; t<sub>2</sub>)<sup>-1</sup> = t<sub>2</sub> &rarr; t<sub>1</sub>
 </center>
 
 #### Phi &Phi;()
@@ -204,7 +204,7 @@ To profit by this operation one must specialize this transition an put a non-ove
 So to get a propper picture-in-picture &arr; picture-in-picture transition we can put a side-by-side composite between:
 
 <center>
-_&Phi;(pip &harr; sbs &harr; pip)_
+&Phi;(pip &harr; sbs &harr; pip)
 </center>
 
 The result with a side-by-side composite in the middle looks like:
