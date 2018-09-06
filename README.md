@@ -6,11 +6,11 @@
 - [TOC](#toc)
 - [Purpose](#purpose)
 - [Use Cases](#use-cases)
-	- [*s*(A) &harr; *s*(B)](#sa-harr-sb)
-	- [*s*(A) &harr; *t*(A,B)](#sa-harr-tab)
-	- [*t*(A,B) &harr; *t*(B,A)](#tab-harr-tba)
-	- [*t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)](#tsub1subab-harr-tsub2subab)
-	- [*s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>) or *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B)](#sasub1sub-harr-sasub2sub-or-tasub1subb-harr-tasub2subb)
+	- [Composites](#composites)
+	- [Transitions](#transitions)
+- [Operations](#operations)
+	- [Composite Operations](#composite-operations)
+	- [Transition Operations](#transition-operations)
 - [Interfaces](#interfaces)
 	- [Composites](#composites)
 	- [Transitions](#transitions)
@@ -38,28 +38,56 @@ The purpose of _voctomix_ __transitions__ is to implement an easy way to semi-au
 So far _voctomix_ was capable of using the following preset composites:
 
 - single source __*s*(A)__
-  - single  source full screen
+  - single source full screen (fs)
 - two sources __*t*(A,B)__
-  - side-by-side
-  - picture-in-picture
-  - side-by-side-preview
+  - side-by-side (sbs)
+  - picture-in-picture (pip)
+  - side-by-side-preview (sbsp)
 
 Until transitions existed in _voctomix_, switching between any of these compositing scenarios was made rapidly from one frame to the next. The idea of transitions is to fade between composites by doing an animation and/or alpha (transparency) blending. With _voctomix_ __transitions__ we like to produce the most expected result for every possible scenario and give the user also the ability to create new composites and adjust or improve existing ones or even invent new transitions.
 
 ## Use Cases
 
-Generally we can differ between the following transition cases.
-The images below show source <span style="color:red">__A__</span> in red and source <span style="color:blue">__B__</span> in blue.
-__s(A)__ and __t(A,B)__ are composites showing one or two sources.
+We relay on the original _voctomix_ composing scenario but
 
-### *s*(A) &harr; *s*(B)
+### Composites
+
+A __composite__ is a mix of multiple images sources into one image.
+The _voctomix_ project was previously using four fixed composites called _fullscreen_, _picture-in-picture (pip)_, _side-by-side_ and _side-by-sidepreview_. We can divide these transitions into the following categories.
+_Voctomix_ also uses a background source image which will not be discussed here because it is just irrelevant for handling transitions.  
+
+The images below show source <span style="color:red">__A__</span> in red and source <span style="color:blue">__B__</span> in blue.
+
+#### s(A), s(B)
+
+![fullscreen A composite](images/fullscreen.png)
+![fullscreen B composite](images/fullscreen-b.png)
+
+We name these kind of composites __s(A)__ or __s(B)__.
+
+#### t(A,B)
+
+![pip composite](images/pip.png)
+![sidebyside  composite](images/sidebyside.png)
+![sidebysidepreview composite](images/sidebysidepreview.png)
+
+We name these kind of composites __t(A,B)__.
+
+We later also differ between overlapping and __non-overlapping composites__.
+_pip_ for example is an __overlapping composite__ because the image of source B overlaps that of source A.
+
+### Transitions
+
+Generally we can differ between the following transition cases.
+
+#### *s*(A) &harr; *s*(B)
 
 ![fullscreen-fullscreen transition](images/fullscreen-fullscreen.gif)
 ![another fullscreen-fullscreen transition](images/fullscreen-fullscreen-both.gif)
 
 First case is to switch from one full screen source to another by switching A &harr; B. The most common method here is to blend transparency of both sources from one to the other.
 
-### *s*(A) &harr; *t*(A,B)
+#### *s*(A) &harr; *t*(A,B)
 
 ![fullscreen-pip transition](images/fullscreen-pip.gif)
 ![fullscreen-sidebyside transition](images/fullscreen-sidebyside.gif)
@@ -67,13 +95,13 @@ First case is to switch from one full screen source to another by switching A &h
 
 Switch from full screen to a composite of both sources can be done by blending the alpha channel of the added source from transparent to opaque or by an animation of the incoming source or both.
 
-### *t*(A,B) &rarr; *s*(B)
+#### *t*(A,B) &rarr; *s*(B)
 
 ![pip-fullscreen-b transition](images/pip-fullscreen-b.gif)
 ![sidebyside-fullscreen-b transition](images/sidebyside-fullscreen-b.gif)
 ![sidebysidepreview-fullscreen-b transition](images/sidebysidepreview-fullscreen-b.gif)
 
-### *t*(A,B) &harr; *t*(B,A)
+#### *t*(A,B) &harr; *t*(B,A)
 
 ![pip-pip transition](images/pip-pip.gif)
 ![sidebyside-sidebyside transition](images/sidebyside-sidebyside.gif)
@@ -84,7 +112,7 @@ To switch between A and B within a composite an animation is preferable. In some
 To guarantee that this is possible transitions can be improved by inserting so-called __intermediate composites__ which add __key frames__ for both sources in which they do not overlap and so bring a chance to do the z-order swap.
 _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth motion between __*t*(A,B)__ &harr; __*t'*(A,B)__ &harr; __*t*(B,A)__. You even can use multiple intermediate composites within the same transition, if you like.
 
-### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)
+#### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(A,B)
 
 ![sidebyside-sidebysidepreview transition](images/sidebyside-sidebysidepreview.gif)
 ![sidebysidepreview-sidebyside transition](images/sidebysidepreview-sidebyside.gif)
@@ -92,11 +120,104 @@ _voctomix_ __transitions__ is then using *B-Splines* to interpolate a smooth mot
 
 Switching the composite while leaving the sources A and B untouched is similar to the previous case __*t*(A,B)__ &harr; __*t*(B,A)__ except that there is usually no need to have intermediate composites to switch the z-order because A and B remain unswapped.
 
-### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(B,A)
+#### *t<sub>1</sub>*(A,B) &harr; *t<sub>2</sub>*(B,A)
 
-### *s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>) or *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B)
+![sidebyside-sidebysidepreview-b transition](images/sidebyside-sidebysidepreview-b.gif)
+![sidebysidepreview-sidebyside-b transition](images/sidebysidepreview-sidebyside-b.gif)
+![pip-sidebyside-b transition](images/sidebyside-b-pip.gif)
+
+#### *s*(A<sub>1</sub>) &harr; *s*(A<sub>2</sub>) or *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B)
 
 Switching one of both sources to another input channel can lead to a three sources scenario which is currently not covered by _voctomix_ __transitions__ but shall be part of *future development*.
+
+## Operations
+
+To minimize the amount of composites and transitions which must be configured, missing composites and transitions shall be auto-generated.
+The rules to do that are listed below.
+
+Mostly these operations are inserted automatically.
+They are described here for better understanding of how _voctomix_ **transitions** work and to understand the debugging output of the resulting code.
+
+### Composite Operations
+
+#### Equivalence
+
+A frame of empty size is invisible like one which is fully transparent but has an extent.
+Also a composite of two frames where one is opaque and overlapping the other completely includes one invisible frame.
+So those kind of composites may be treated as equivalent if one frame differs in both composites by some properties but is overall still invisible in both.
+
+So when _voctomix_-**transitions** is looking for a matching composite it uses this rule which shortens the list of necessary manual tranisiton definitions.
+
+#### Swap
+
+A composite of source A and B _t(A,B)_ can be swapped by simply swapping A and B like in this example:
+
+![sidebyside  composite](images/sidebyside.png)
+![sidebyside  composite](images/sidebyside-swapped.png)
+
+We mark that swap operation with a `^` sign.
+Put into a formular we can write this as
+
+<center>
+_^t(A,B) = t(A,B)_
+</center>
+
+### Transition Operations
+
+#### Reverse
+
+![sidebyside  composite](images/sidebysidepreview-sidebyside.gif)
+![sidebyside  composite](images/sidebyside-sidebysidepreview.gif)
+
+A transition *T* from composite *t<sub>1</sub>* to composite *t<sub>2</sub>* written as...
+
+<center>
+*T* = *t<sub>1</sub>* &rarr; *t<sub>2</sub>*
+</center>
+
+...can be reversed.
+
+We mark that reverse operation with an exponent of <sup>`-1`</sup>:
+
+<center>
+*T<sup>-1</sup>* = (*t<sub>1</sub>(A,B)* &rarr; *t<sub>2</sub>*(A,B))<sup>-1</sup> = *t<sub>2</sub>(A,B)* &rarr; *t<sub>1</sub>*(A,B)
+</center>
+
+Or shorter:
+
+<center>
+*T<sup>-1</sup>* = (*t<sub>1</sub>* &rarr; *t<sub>2</sub>*)<sup>-1</sup> = *t<sub>2</sub>* &rarr; *t<sub>1</sub>*
+</center>
+
+#### Phi &Phi;()
+
+This operation is needed to handle some transitions between _overlay composites_.
+It works different because it does not change a transition but it's processing.
+We call that operation _&Phi;()_.
+
+Overlay composites have a so-called _z-order_ which defines that B is drawn above A.
+If you take an overlay composite like _picture-in-picture_, generating an animation for swapping both sources must include a switch of this z-order.
+
+This is done with the _&Phi;()_ operation which finds the first composite within a transition where source B do not even paritally cover the image of source A.
+To profit by this operation one must specialize this transition an put a non-overlaying composite between the target composites.
+
+So to get a propper picture-in-picture &arr; picture-in-picture transition we can put a side-by-side composite between:
+
+<center>
+_&Phi;(pip &harr; sbs &harr; pip)_
+</center>
+
+The result with a side-by-side composite in the middle looks like:
+
+![pip-pip transition](images/pip-pip-key.gif)
+
+On the left you can see the added side-by-side composite as rectangles and you can see that A and B ar swapping somewhere within the animation.
+
+Without side-by-side in the middle it would look like:
+
+![pip-pip transition](images/pip-pip-default.gif)
+
+...which is worse than a hard cut.
 
 ## Interfaces
 
@@ -153,17 +274,6 @@ def find(begin, end, transitions):
 Searches in the given dictionary `transitions` for a transition that fades `begin` to `end`.
 In a second step also checks if reversed versions transitions match.
 If a transition was found a tuple of it's name and the transition will be returned - otherwise `None`.
-
-##### Equivalent Composites
-
-A word about the equality of composites in the meaning of their appearance:
-
-A frame of size `[0,0]` is invisible like one with an alpha value of `0`.
-Also a composite of two frames where one is opaque and overlapping the other completely includes one invisible frame.
-So these composites may be treated as equivalent when using `Transition.find()` if one frame differs in both composites by some properties but is overall invisible in both.
-This is why `Transition.find()` is quite intuitive in finding matching transitions.
-
-In *future development* this could easily return all matching transitions to add a randomizer or so.
 
 #### Transitions.travel()
 Returns a list of pairs of composites along all possible transitions between all given `composites` by walking the tree of all combinations recusively.
@@ -274,13 +384,14 @@ To keep migration easy the basic options and values are mostly just reordered or
 List of configurations of custom named composites for mixing video sources A and B.
 
 Attribute       | Format | Default     | Description
-----------------|--------|-------------|------------------------------
+----------------|--------|-------------|-------------------------------------
 _name_`.a`      | RECT   | no output   | position and size of frame A
 _name_`.b`      | RECT   | no output   | position and size of frame B
 _name_`.crop-a` | CROP   | no cropping | cropping borders of frame A
 _name_`.crop-b` | CROP   | no cropping | cropping borders of frame B
 _name_`.alpha-a`| ALPHA  | opaque      | opacity of frame A
 _name_`.alpha-b`| ALPHA  | opaque      | opacity of frame B
+_name_`.noswap` | BOOL   | swap        | prevents to target swapped composite
 
 So a default frame without any attributes is invisble by his zero extent.
 
@@ -333,6 +444,10 @@ c.crop-b = 0.1               ; source B 10% from each border in format 'LRTB'
 #### ALPHA
 
 Integer value in the range between `0` (invisible) and `255` (opaque) or float value between `0.0` (invisible) and `1.0` (opaque) or `*` (also opaque).
+
+#### BOOL
+
+Any value is true but false if empty.
 
 ##### Examples
 ```ini
@@ -389,8 +504,8 @@ You may also select additional drawing of cropping, key frames or a title by com
 
 ```raw
 ▶ python3 testtransition.py -h  
-usage: testtransition.py [-h] [-l] [-g] [-t] [-k] [-c] [-C] [-r] [-n] [-P]
-                         [-L] [-G] [-v]
+usage: testtransition.py [-h] [-m] [-l] [-g] [-t] [-k] [-c] [-C] [-r] [-n]
+                         [-P] [-L] [-G] [-v]
                          [composite [composite ...]]
 
 transition - tool to generate voctomix transition animations for testing
@@ -401,6 +516,7 @@ positional arguments:
 
 optional arguments:
   -h, --help      show this help message and exit
+  -m, --map       print transition table
   -l, --list      list available composites
   -g, --generate  generate animation
   -t, --title     draw composite names and frame count
@@ -414,6 +530,7 @@ optional arguments:
   -G, --nogif     when using -g: do not generate animated GIFS
   -v, --verbose   also print WARNING (-v), INFO (-vv) and DEBUG (-vvv)
                   messages
+
 ```
 
 ### Example Usage
@@ -431,7 +548,7 @@ saving transition animation file 'pip-pip.gif' (pip-pip, 37 frames)...
 
 This call generates the following animated GIF:
 
-![pip-pip transition with keyframes](images/pip-pip-key.gif)
+![pip-pip transition with keyframes](images/pip-pip-key-big.gif)
 
 You can see the key frames of `pip` `A.0`=`B.2` and `B.0`=`A.2` of the start and end composite. In the vertical center you can see the key frames `A.1` and `B.1` given by sidebyside to produce a moment of non-overlapping. At the first time when the blue frame `B` is not overlapping the red one `A` the flipping point is reached and sources `A`/`B` can be flipped without side effects.
 
@@ -440,24 +557,24 @@ The following configuration file was used to generate that animation:
 ```ini
 [output]
 ; full screen size in pixels
-size    = 960x540
+size         = 960x540
 ; frames per second to render
-fps     = 25
+fps          = 25
 
 [composites]
 ; Frame A full screen
-pip.a                 = *
+pip.a        = *
 ; frame B lower-right corner with 16% size
-pip.b                 = 0.83/0.82 0.16
+pip.b        = 0.83/0.82 0.16
 
 ; left-middle nearly half size
-sidebyside.a          = 0.008/0.25 0.49
+sidebyside.a = 0.008/0.25 0.49
 ; right-middle nearly half size
-sidebyside.b          = 0.503/0.25 0.49
+sidebyside.b = 0.503/0.25 0.49
 
 [transitions]
 ; transition from pip to pip (swapped) over sidebyside within 1.5 seconds
-pip-pip               = 1500, pip / sidebyside / pip
+pip-pip      = 1500, pip / sidebyside / pip
 ```
 
 ### Using verbose mode
@@ -468,10 +585,16 @@ In verbose mode you can see more information about how a transition will be foun
 ▶ python3 testtransition.py -vvv pip
 reading composites from configuration...
 read 2 composites:
-	sidebyside
+	sbs
 	pip
 reading transitions from configuration...
-calculating transition 'pip-pip'
+adding transition pip-pip = pip -> pip
+	pip-pip = pip -> pip:
+	No. Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)  Name
+	  0  *  A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)  pip
+	  1  *  A(   1,  33   118,  99   255     0,   0,   0,   0  0.00,0.00)	B( 120,  33   237,  99   255     0,   0,   0,   0  0.00,0.00)  sbs
+	  2  *  A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)  pip
+calculating transition pip-pip = pip/sbs/pip
 read 1 transition(s):
 	pip-pip
 using 1 target composite(s):
@@ -479,45 +602,36 @@ using 1 target composite(s):
 generated sequence (2 items):
 	pip
 	pip
-
-request transition: pip -> pip
-	    Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
-	     *  A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)
-	     *  A( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00) (swapped)
-trying transition: pip-pip
-	    Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
-	     *  A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)
-	     *  A( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)	B(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)
-found transition: pip-pip
-transition found: pip -> pip-pip -> pip
-	No. Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)
-	  0  *  A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)
-	  1     A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)	B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)
-	  2     A(   4,   0   952, 533   255     0,   0,   0,   0  0.00,0.00)	B( 792, 436   953, 526   255     0,   0,   0,   0  0.00,0.00)
-	  3     A(  20,   2   933, 516   255     0,   0,   0,   0  0.00,0.00)	B( 783, 423   966, 526   255     0,   0,   0,   0  0.00,0.00)
-	  4     A(  44,   4   903, 487   255     0,   0,   0,   0  0.00,0.00)	B( 768, 402   986, 525   255     0,   0,   0,   0  0.00,0.00)
-	  5     A(  70,   8   861, 453   255     0,   0,   0,   0  0.00,0.00)	B( 746, 373  1009, 520   255     0,   0,   0,   0  0.00,0.00)
-	  6     A(  93,  14   808, 416   255     0,   0,   0,   0  0.00,0.00)	B( 718, 338  1030, 513   255     0,   0,   0,   0  0.00,0.00)
-	  7     A( 108,  23   747, 382   255     0,   0,   0,   0  0.00,0.00)	B( 683, 298  1043, 501   255     0,   0,   0,   0  0.00,0.00)
-	  8     A( 108,  35   679, 356   255     0,   0,   0,   0  0.00,0.00)	B( 641, 256  1046, 483   255     0,   0,   0,   0  0.00,0.00)
-	  9     A(  90,  52   607, 342   255     0,   0,   0,   0  0.00,0.00)	B( 594, 214  1034, 461   255     0,   0,   0,   0  0.00,0.00)
+request transition (1/1): pip → pip
+transition found: Φ(pip-pip)
+	Φ(pip-pip) = pip -> pip:
+	No. Key A(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)	B(   L,   T     R,   B alpha  LCRP,TCRP,RCRP,BCRP  XZOM,YZOM)  Name
+	  0  *  A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)  pip
+	  1     A(   0,   0   239, 135   255     0,   0,   0,   0  0.00,0.00)	B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)  ...
+	  2     A(   0,   0   238, 134   255     0,   0,   0,   0  0.00,0.00)	B( 198, 108   238, 130   255     0,   0,   0,   0  0.00,0.00)  ...
+	  3     A(   4,   0   234, 130   255     0,   0,   0,   0  0.00,0.00)	B( 196, 106   240, 131   255     0,   0,   0,   0  0.00,0.00)  ...
+	  4     A(   9,   0   228, 123   255     0,   0,   0,   0  0.00,0.00)	B( 193, 101   245, 130   255     0,   0,   0,   0  0.00,0.00)  ...
+	  5     A(  15,   1   219, 116   255     0,   0,   0,   0  0.00,0.00)	B( 188,  95   249, 129   255     0,   0,   0,   0  0.00,0.00)  ...
+	  6     A(  21,   2   208, 107   255     0,   0,   0,   0  0.00,0.00)	B( 182,  87   254, 127   255     0,   0,   0,   0  0.00,0.00)  ...
+	  7     A(  24,   4   194, 100   255     0,   0,   0,   0  0.00,0.00)	B( 175,  79   258, 126   255     0,   0,   0,   0  0.00,0.00)  ...
+	  8     A(  27,   6   180,  92   255     0,   0,   0,   0  0.00,0.00)	B( 167,  70   261, 123   255     0,   0,   0,   0  0.00,0.00)  ...
+	  9     A(  26,   9   164,  87   255     0,   0,   0,   0  0.00,0.00)	B( 157,  60   260, 118   255     0,   0,   0,   0  0.00,0.00)  ...
+	 10     A(  20,  13   147,  84   255     0,   0,   0,   0  0.00,0.00)	B( 145,  50   256, 112   255     0,   0,   0,   0  0.00,0.00)  ...
 	----------------------------------------------------------- FLIP SOURCES ------------------------------------------------------------
-	 10     B(  51,  80   533, 351   255     0,   0,   0,   0  0.00,0.00)	A( 540, 173  1002, 433   255     0,   0,   0,   0  0.00,0.00)
-	 11  *  B(   7, 135   477, 399   255     0,   0,   0,   0  0.00,0.00)	A( 482, 135   952, 399   255     0,   0,   0,   0  0.00,0.00)
-	 12     B(   7, 134   477, 398   255     0,   0,   0,   0  0.00,0.00)	A( 482, 135   952, 399   255     0,   0,   0,   0  0.00,0.00)
-	 13     B(  49, 215   511, 475   255     0,   0,   0,   0  0.00,0.00)	A( 412,  97   894, 368   255     0,   0,   0,   0  0.00,0.00)
-	 14     B( 141, 269   581, 516   255     0,   0,   0,   0  0.00,0.00)	A( 341,  66   858, 356   255     0,   0,   0,   0  0.00,0.00)
-	 15     B( 250, 312   655, 539   255     0,   0,   0,   0  0.00,0.00)	A( 272,  43   843, 364   255     0,   0,   0,   0  0.00,0.00)
-	 16     B( 365, 347   725, 550   255     0,   0,   0,   0  0.00,0.00)	A( 206,  26   845, 385   255     0,   0,   0,   0  0.00,0.00)
-	 17     B( 477, 376   789, 551   255     0,   0,   0,   0  0.00,0.00)	A( 148,  14   863, 416   255     0,   0,   0,   0  0.00,0.00)
-	 18     B( 581, 400   844, 547   255     0,   0,   0,   0  0.00,0.00)	A(  96,   7   887, 452   255     0,   0,   0,   0  0.00,0.00)
-	 19     B( 670, 418   888, 541   255     0,   0,   0,   0  0.00,0.00)	A(  55,   3   914, 486   255     0,   0,   0,   0  0.00,0.00)
-	 20     B( 737, 431   920, 534   255     0,   0,   0,   0  0.00,0.00)	A(  25,   1   938, 515   255     0,   0,   0,   0  0.00,0.00)
-	 21     B( 780, 439   941, 529   255     0,   0,   0,   0  0.00,0.00)	A(   7,   0   955, 533   255     0,   0,   0,   0  0.00,0.00)
-	 22  *  B( 796, 442   949, 528   255     0,   0,   0,   0  0.00,0.00)	A(   0,   0   960, 540   255     0,   0,   0,   0  0.00,0.00)
-
-1 transition(s) available:
-	pip-pip
+	 11     B(  11,  20   130,  87   255     0,   0,   0,   0  0.00,0.00)	A( 133,  41   248, 106   255     0,   0,   0,   0  0.00,0.00)  ...
+	 12  *  B(   1,  33   118,  99   255     0,   0,   0,   0  0.00,0.00)	A( 120,  33   237,  99   255     0,   0,   0,   0  0.00,0.00)  sbs
+	 13     B(   1,  32   118,  98   255     0,   0,   0,   0  0.00,0.00)	A( 119,  32   236,  98   255     0,   0,   0,   0  0.00,0.00)  ...
+	 14     B(  10,  51   125, 116   255     0,   0,   0,   0  0.00,0.00)	A( 104,  24   223,  91   255     0,   0,   0,   0  0.00,0.00)  ...
+	 15     B(  30,  64   141, 126   255     0,   0,   0,   0  0.00,0.00)	A(  88,  17   215,  88   255     0,   0,   0,   0  0.00,0.00)  ...
+	 16     B(  55,  74   158, 132   255     0,   0,   0,   0  0.00,0.00)	A(  72,  11   210,  89   255     0,   0,   0,   0  0.00,0.00)  ...
+	 17     B(  80,  83   174, 136   255     0,   0,   0,   0  0.00,0.00)	A(  57,   7   210,  93   255     0,   0,   0,   0  0.00,0.00)  ...
+	 18     B( 106,  90   189, 137   255     0,   0,   0,   0  0.00,0.00)	A(  43,   4   213, 100   255     0,   0,   0,   0  0.00,0.00)  ...
+	 19     B( 131,  96   203, 136   255     0,   0,   0,   0  0.00,0.00)	A(  30,   2   217, 107   255     0,   0,   0,   0  0.00,0.00)  ...
+	 20     B( 154, 101   215, 135   255     0,   0,   0,   0  0.00,0.00)	A(  19,   1   223, 116   255     0,   0,   0,   0  0.00,0.00)  ...
+	 21     B( 172, 105   224, 134   255     0,   0,   0,   0  0.00,0.00)	A(  11,   0   230, 123   255     0,   0,   0,   0  0.00,0.00)  ...
+	 22     B( 187, 107   231, 132   255     0,   0,   0,   0  0.00,0.00)	A(   5,   0   235, 130   255     0,   0,   0,   0  0.00,0.00)  ...
+	 23     B( 195, 109   235, 131   255     0,   0,   0,   0  0.00,0.00)	A(   1,   0   239, 134   255     0,   0,   0,   0  0.00,0.00)  ...
+	 24  *  B( 199, 110   237, 131   255     0,   0,   0,   0  0.00,0.00)	A(   0,   0   240, 135   255     0,   0,   0,   0  0.00,0.00)  pip
 ```
 
 As you can see the tripple verbose mode (using option `-vvv`) prints out a list of loaded composites and found transitions too, like option `-l` does.
@@ -528,6 +642,28 @@ Additionally it prints out:
 - the long table which shows the calculated animation for this transition and all it's properties,
 - the _flipping point_ at `--- FLIP SOURCES ---` from which on the letters for A and B are swapped and
 - also the `*` signs which mark the used key frames from the composites out of the configuration.
+
+#### Transition Table
+
+To examine the automatically generated composites and transitions you can print out the transition table with `-m`:
+
+```
+▶ python3 testtransition.py -m
+transition table:
+       fs-a                pip                 sbs                 sbsp                fs-b                ^sbsp               ^sbs                
+
+ fs-a  Φ(def(fs-a/fs-a))   fs-a-pip            fs-a-sbs            fs-a-sbsp           fs-fs               ^fs-b-sbsp          ^fs-b-sbs           
+  pip  fs-a-pip⁻¹          Φ(pip-pip)          def(pip/sbs)        def(pip/sbsp)       fs-b-pip⁻¹          def(pip/^sbsp)      def(pip/^sbs)       
+  sbs  fs-a-sbs⁻¹          def(sbs/pip)        Φ(sbs-sbs)          def(sbs/sbsp)       fs-b-sbs⁻¹          def(sbs/^sbsp)      Φ(_sbs-sbs⁻¹)       
+ sbsp  fs-a-sbsp⁻¹         def(sbsp/pip)       def(sbsp/sbs)       Φ(def(sbsp/sbsp))   fs-b-sbsp⁻¹         Φ(def(sbsp/^sbsp))  def(sbsp/^sbs)      
+ fs-b  Φ(fs-fs⁻¹)          Φ(fs-b-pip)         fs-b-sbs            fs-b-sbsp           Φ(^fs-fs)           ^fs-a-sbsp          ^fs-a-sbs           
+^sbsp  ^fs-b-sbsp⁻¹        def(^sbsp/pip)      def(^sbsp/sbs)      Φ(def(^sbsp/sbsp))  ^fs-a-sbsp⁻¹        Φ(def(^sbsp/^sbsp)) def(^sbsp/^sbs)     
+ ^sbs  ^fs-b-sbs⁻¹         def(^sbs/pip)       Φ(_sbs-sbs)         def(^sbs/sbsp)      ^fs-a-sbs⁻¹         def(^sbs/^sbsp)     Φ(^sbs-sbs)     
+
+```
+
+The table has rows of all configured start target composites and columns of end target composites.
+Every cell includes the available transitions.  
 
 ### Code
 
@@ -562,28 +698,54 @@ def read_config(filename):
 ```
 `filename` is the name of the config file.
 
+#### render_composites()
+
+Renders pictures of all `composites` and saves them into PNG files.
+
+```python
+def render_composites(size, composites):
+```
+Produces images of the given `size`.
+
 #### render_sequence()
+
 Render all transitions between all items in the given sequence by using `safe_transition_gif()` (see below).
+
 ```python
 def render_sequence(size, fps, targets, transitions, composites):
 ```
+
 Sequence is defined by the names listed in `targets`.
-Producing images of the given `size`.
+Produces images of the given `size`.
 Calculate with `fps` frames per second and use the `transitions` and `composites` dictonaries to find matching transitions.
 
 #### save_transition_gif()
+
 Generates an anmiated GIF of the given name of an animation by using `draw_transition()` (see below)
+
 ```python
 def save_transition_gif(filename, size, name, animation, time):
 ```
+
 `filename` is the name of the resulting file, `size` it's dimensions, `name` the displayed title, `animation` the transition to render and `time` the duration of that whole animation in the GIF.
+
+#### draw_composite()
+Function that draws one composite and returns an image.
+
+```python
+def draw_composite(size, composite, swap=False):
+```
+
+Produces images of `composite` in the given `size` which can be drawn swapped by using `swap`.
 
 #### draw_transition()
 Internal function that draws one transition and returns a list of images.
+
 ```python
 def draw_transition(size, transition, name=None):
 ```
-Producing images of `transtion` in the given `size`.
+
+Produces images of `transition` in the given `size`.
 
 ## TODO
 #### Integration into exisiting _voctomix_
@@ -598,3 +760,4 @@ To get out video transition effect within _voctomix_ the configuration needs a f
 - May be have just one `configure()` in `Transitions` which returns both composites and transitions so that you only need to import the Transitions interface instead of additionally the Composties interface.
 - Decide in which way three source scenarios like *t*(A<sub>1</sub>,B) &harr; *t*(A<sub>2</sub>,B) or *t*(A,B<sub>1</sub>) &harr; *t*(A,B<sub>2</sub>) can profite from any kind of specialized transitions.
 - What about unlimited sources?
+- add additional composite operations (like visual mirroring)?

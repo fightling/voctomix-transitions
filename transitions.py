@@ -18,25 +18,40 @@ log = logging.getLogger('Transitions')
 
 
 class Transitions:
+    """ transition table and interface
+    """
 
     def __init__(self, targets):
         self.transitions = [[None] * len(targets) for n in targets]
         self.targets = targets
 
     def __str__(self):
-        # print transition table
-        hr = ("─" * 17) + ("┼%s" % ("─" * 17)) * (len(self.targets)) + "\n"
-        result = "%s\n" % "".join(["%16s " % ""] + ["│%16s " %
-                                                    t.name for t in self.targets])
+        """ write transition table into a string
+        """
+        # measure column width for first column
+        cw = 1
+        for t in self.targets:
+            cw = max(cw, len(t.name))
+        # and measure column width for other columns
+        tw = 1
+        for tt in self.transitions:
+            for t in tt:
+                tw = max(tw, len(t.name()))
+        # write transition table header into a string
+        result = "%s\n\n" % "".join([("%" + str(cw) + "s  ") % ""] +
+                                    [("%-" + str(tw) + "s ") % t.name
+                                     for t in self.targets])
+
+        # write transition table into a string
         for i in range(len(self.transitions)):
-            result += hr
-            result += "%s\n" % "".join(["%16s " % self.targets[i].name] +
-                                       ["│%16s " % (x.name() if x else "-")
-                                        for x in self.transitions[i]]
-                                       )
+            result += "%s\n" % "".join([("%" + str(cw) + "s  ") % self.targets[i].name] +
+                                       [("%-" + str(tw) + "s ") % (x.name() if x else "-")
+                                        for x in self.transitions[i]])
         return result
 
     def find(self, begin, end):
+        """ search for a transition in the transition table
+        """
         for b in range(len(self.targets)):
             for e in range(len(self.targets)):
                 if self.targets[b].equals(begin, True) and self.targets[e].equals(end, True):
@@ -44,17 +59,27 @@ class Transitions:
         return None
 
     def add(self, transition, frames):
+        """ calculate and add a transition into the transition table
+        """
+        # check if we already added a equivalent transition
+        calculated = self.find(transition.begin(), transition.end())
         for begin in range(len(self.targets)):
             for end in range(len(self.targets)):
+                # check if transition matches that place within the table
                 if self.targets[begin].equals(transition.begin(), True) and self.targets[end].equals(transition.end(), True):
+                    # check if place is empty
                     if not self.transitions[begin][end]:
                         log.debug("adding transition %s = %s -> %s\n%s" %
                                   (transition.name(), self.targets[begin].name, self.targets[end].name, transition))
-                        t = copy.deepcopy(transition)
-                        t.calculate(frames)
-                        self.transitions[begin][end] = t
+                        # calculate transition if necessary
+                        if not calculated:
+                            transition.calculate(frames)
+                        # add transition to table
+                        self.transitions[begin][end] = transition
 
     def count(self):
+        """ count available transition
+        """
         n = 0
         for tt in self.transitions:
             for t in tt:
@@ -73,11 +98,11 @@ class Transitions:
                     return i
             return None
 
-        # prepare result
-        transitions = Transitions(targets)
-
         def convert(keys, conv):
             return [keys, keys.reversed(), keys.swapped(), keys.reversed().swapped()][conv]
+
+        # prepare result
+        transitions = Transitions(targets)
 
         # walk through all items within the configuration string
         for t_name, t in cfg:
@@ -90,8 +115,12 @@ class Transitions:
             sequence = [x.strip() for x in sequence.split('/')]
             for conversion in range(4):
                 for seq in parse_asterisk(sequence, targets):
+                    if "*" in sequence:
+                        name = "%s(%s)" % (t_name, "/".join(seq))
+                    else:
+                        name = t_name
                     # prepare list of key frame composites
-                    keys = Transition(t_name)
+                    keys = Transition(name)
                     try:
                         # walk trough composite sequence
                         for c_name in seq:
@@ -104,7 +133,7 @@ class Transitions:
                     # log any failed find
                     except KeyError as err:
                         raise RuntimeError(
-                            'composite "{}" could not be found in transition {}'.format(err, t_name))
+                            'composite "{}" could not be found in transition {}'.format(err, name))
                     transitions.add(convert(keys, conversion), frames - 1)
         # return dictonary
         return transitions
@@ -168,11 +197,11 @@ class Transition:
         # add table title
         str += "\tNo. %s\n" % Composite.str_title()
         # add composites until flipping point
-        for i in range(flip_at if flip_at else self.frames()):
+        for i in range(flip_at if flip_at is not None else self.frames()):
             str += ("\t%3d %s A%s\tB%s  %s\n" %
                     (i, " * " if self.A(i).key else "   ", self.A(i), self.B(i), self.composites[i].name))
         # add composites behind flipping point
-        if flip_at:
+        if flip_at is not None:
             str += ("\t-----------------------------------------------------------"
                     " FLIP SOURCES "
                     "------------------------------------------------------------\n")
@@ -220,23 +249,26 @@ class Transition:
     def swapped(self):
         return Transition(swap_name(self._name), [c.swapped() for c in self.composites])
 
-    def append(self, composite):
-        assert type(composite) is Composite
-        self.composites.append(composite)
-
     def flip(self):
         """ find the first non overlapping rectangle pair within parameters and
             return it's index
         """
+        # check if a phi was applied
         if self.phi():
+
+            # check if rectangle a and b overlap
             def overlap(a, b):
                 return (a[L] < b[R] and a[R] > b[L] and a[T] < b[B] and a[B] > b[T])
 
+            # check if A of begin composite and B of end composite are the same
             if self.A(0) == self.B(-1):
-                for i in range(self.frames() - 1):
+                # find the first non overlapping composite
+                for i in range(self.frames() - 2):
                     if not overlap(self.A(i).cropped(), self.B(i).cropped()):
                         return i
+                # at last we need to swap at the end
                 return self.frames() - 1
+        # no flipping
         return None
 
     def calculate(self, frames, a_corner=(R, T), b_corner=(L, T)):
@@ -270,7 +302,7 @@ class Transition:
                     j += 1
                 else:
                     name = "..."
-                composites.append(Composite(name, a[i], b[i]))
+                composites.append(Composite(len(composites), name, a[i], b[i]))
             self.composites = composites
 
     def keys(self):
@@ -280,6 +312,9 @@ class Transition:
 
 
 def parse_asterisk(sequence, composites):
+    """ parses a string like '*/*' and returns all available variants with '*'
+        being replaced by composite names in 'composites'.
+    """
     sequences = []
     for k in range(len(sequence)):
         if sequence[k] == '*':
@@ -427,6 +462,10 @@ def fade(begin, end, factor):
 
 
 def morph(begin, end, pt, corner, factor):
+    """ interpolates a new frame between two given frames 'begin and 'end'
+        putting the given 'corner' of the new frame's rectangle to point 'pt'.
+        'factor' is the position bewteen begin (0.0) and end (1.0).
+    """
     result = Frame()
     # calculate current size
     size = fade(begin.size(), end.size(), factor)
@@ -439,6 +478,7 @@ def morph(begin, end, pt, corner, factor):
     # calculate current alpha value and cropping
     result.alpha = fade(begin.alpha, end.alpha, factor)
     result.crop = fade(begin.crop, end.crop, factor)
+    # copy orignial size from begin
     result.original_size = begin.original_size
     return result
 
@@ -492,6 +532,8 @@ def interpolate(key_frames, num_frames, corner):
 
 
 def is_in(sequence, part):
+    """ returns true if 2-item list 'part' is in list 'sequence'
+    """
     assert len(part) == 2
     for i in range(0, len(sequence) - 1):
         if sequence[i: i + 2] == part:

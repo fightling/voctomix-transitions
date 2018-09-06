@@ -30,40 +30,50 @@ class Composites:
             # split name into name and attribute
             name, attr = c_name.lower().rsplit('.', 1)
             if name not in composites:
-                composites[name] = Composite(name)
+                # add  new composite
+                composites[name] = Composite(len(composites), name)
             try:
+                # set attribute
                 composites[name].config(attr, c_val, size)
             except RuntimeError as err:
                 raise RuntimeError(
                     "syntax error in composite config value at '{}':\n{}"
                     .format(name, err))
         if add_swap:
+            # add any useful swapped targets
             add_swapped_targets(composites)
         return composites
 
     def targets(composites):
+        """ return a list of all composites that are not intermediate
+        """
         result = []
         for c_name, c in composites.items():
             if not c.inter:
                 result.append(c)
-        return result
+        return sorted(result, key=lambda c: c.order)
 
     def intermediates(composites):
+        """ return a list of all composites that are intermediate
+        """
         result = []
         for c_name, c in composites.items():
             if c.inter:
                 result.append(c)
-        return result
+        return sorted(result, key=lambda c: c.order)
 
 
 class Composite:
 
-    def __init__(self, name, a=Frame(True), b=Frame(True)):
+    def __init__(self, order, name, a=Frame(True), b=Frame(True)):
+        assert type(order) is int or order is None
         assert type(name) is str or not name
         self.name = name
         self.frame = [copy.deepcopy(a), copy.deepcopy(b)]
         self.default = [None, None]
-        self.inter = None
+        self.inter = False
+        self.noswap = False
+        self.order = order
 
     def str_title():
         return "Key A%s\tB%s  Name" % (Frame.str_title(), Frame.str_title())
@@ -92,18 +102,24 @@ class Composite:
     def swap(self):
         """ swap A and B source items
         """
-        # then swap frames
-        self.frame = self.frame[::-1]
-        self.name = swap_name(self.name)
+        if self.noswap:
+            return self
+        else:
+            # then swap frames
+            self.frame = self.frame[::-1]
+            self.name = swap_name(self.name)
 
     def swapped(self):
         """ swap A and B source items
         """
-        # deep copy everything
-        s = copy.deepcopy(self)
-        # then swap frames
-        s.swap()
-        return s
+        if self.noswap:
+            return self
+        else:
+            # deep copy everything
+            s = copy.deepcopy(self)
+            # then swap frames
+            s.swap()
+            return s
 
     def key(self):
         for f in self.frame:
@@ -133,6 +149,8 @@ class Composite:
             self.frame[1].alpha = str2alpha(value)
         elif attr == 'inter':
             self.inter = value
+        elif attr == 'noswap':
+            self.noswap = value
         self.frame[0].original_size = size
         self.frame[1].original_size = size
 
@@ -162,14 +180,14 @@ def add_swapped_targets(composites):
             inc = True
             for v_name, v in composites.items():
                 if v.equals(c.swapped(), True) and not v.inter:
-                    log.debug("skipping auto-swap of %s because %s = %s" %
-                              (c_name, swap_name(c_name), v_name))
                     inc = False
                     break
             if inc:
                 log.debug("adding auto-swapped target %s from %s" %
                           (swap_name(c_name), c_name))
-                result[swap_name(c_name)] = c.swapped()
+                r = c.swapped()
+                r.order = len(composites) + len(result)
+                result[swap_name(c_name)] = r
     return composites.update(result)
 
 
@@ -199,7 +217,7 @@ def str2rect(str, size):
         return [0, 0, size[X], size[Y]]
 
     # check for 'X/Y'
-    r = re.match(r'^\s*([.\d]+)\s*/\s*([.\d]+)\s*$', str)
+    r = re.match(r'^\s*([-.\d]+)\s*/\s*([-.\d]+)\s*$', str)
     if r:
         # return X,Y and overall size
         return [absolute(r.group(1), size[X]),
@@ -216,7 +234,7 @@ def str2rect(str, size):
                 absolute(r.group(4), size[Y])]
     # check for 'X/Y WxH'
     r = re.match(
-        r'^\s*([.\d]+)\s*/\s*([.\d]+)\s+([.\d]+)\s*x\s*([.\d]+)\s*$', str)
+        r'^\s*([-.\d]+)\s*/\s*([-.\d]+)\s+([.\d]+)\s*x\s*([.\d]+)\s*$', str)
     if r:
         # return X,Y,X+W,Y+H
         return [absolute(r.group(1), size[X]),
@@ -224,7 +242,7 @@ def str2rect(str, size):
                 absolute(r.group(1), size[X]) + absolute(r.group(3), size[X]),
                 absolute(r.group(2), size[Y]) + absolute(r.group(4), size[Y])]
     # check for 'XY WxH'
-    r = re.match(r'^\s*(\d+.\d+)\s+([.\d]+)\s*x\s*([.\d]+)\s*$', str)
+    r = re.match(r'^\s*(-?\d+.\d+)\s+([.\d]+)\s*x\s*([.\d]+)\s*$', str)
     if r:
         # return XY,XY,XY+W,XY+H
         return [absolute(r.group(1), size[X]),
@@ -232,7 +250,7 @@ def str2rect(str, size):
                 absolute(r.group(1), size[X]) + absolute(r.group(2), size[X]),
                 absolute(r.group(1), size[Y]) + absolute(r.group(3), size[Y])]
     # check for 'X/Y WH'
-    r = re.match(r'^\s*([.\d]+)\s*/\s*([.\d]+)\s+(\d+.\d+)\s*$', str)
+    r = re.match(r'^\s*([-.\d]+)\s*/\s*([-.\d]+)\s+(\d+.\d+)\s*$', str)
     if r:
         # return X,Y,X+WH,Y+WH
         return [absolute(r.group(1), size[X]),
@@ -240,7 +258,7 @@ def str2rect(str, size):
                 absolute(r.group(1), size[X]) + absolute(r.group(3), size[X]),
                 absolute(r.group(2), size[Y]) + absolute(r.group(3), size[Y])]
     # check for 'XY WH'
-    r = re.match(r'^\s*(\d+.\d+)\s+(\d+.\d+)\s*$', str)
+    r = re.match(r'^\s*(-?\d+.\d+)\s+(\d+.\d+)\s*$', str)
     if r:
         # return XY,XY,XY+WH,XY+WH
         return [absolute(r.group(1), size[X]),
