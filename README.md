@@ -159,7 +159,7 @@ We mark that swap operation with a `^` sign.
 Put into a formular we can write this as
 
 <center>
-^t(A,B) = t(A,B)
+*^t(A,B) = t(A,B)*
 </center>
 
 ### Transition Operations
@@ -171,23 +171,17 @@ Put into a formular we can write this as
 
 A transition *T* from composite *t<sub>1</sub>* to composite *t<sub>2</sub>* written as...
 
-<center>
-T = t<sub>1</sub> &rarr; t<sub>2</sub>
-</center>
+*T = t<sub>1</sub> &rarr; t<sub>2</sub>*
 
 ...can be reversed.
 
 We mark that reverse operation with an exponent of <sup>`-1`</sup>:
 
-<center>
-T<sup>-1</sup> = (t<sub>1</sub>(A,B) &rarr; t<sub>2</sub>(A,B))<sup>-1</sup> = t<sub>2</sub>(A,B) &rarr; t<sub>1</sub>(A,B)
-</center>
+*T<sup>-1</sup> = (t<sub>1</sub>(A,B) &rarr; t<sub>2</sub>(A,B))<sup>-1</sup> = t<sub>2</sub>(A,B) &rarr; t<sub>1</sub>(A,B)*
 
 Or shorter:
 
-<center>
-T<sup>-1</sup> = (t<sub>1</sub> &rarr; t<sub>2</sub>)<sup>-1</sup> = t<sub>2</sub> &rarr; t<sub>1</sub>
-</center>
+*T<sup>-1</sup> = (t<sub>1</sub> &rarr; t<sub>2</sub>)<sup>-1</sup> = t<sub>2</sub> &rarr; t<sub>1</sub>*
 
 #### Phi &Phi;()
 
