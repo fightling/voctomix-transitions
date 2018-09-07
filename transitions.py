@@ -58,7 +58,7 @@ class Transitions:
                     return self.transitions[b][e]
         return None
 
-    def add(self, transition, frames):
+    def add(self, transition, frames, overwrite=False):
         """ calculate and add a transition into the transition table
         """
         # check if we already added a equivalent transition
@@ -66,9 +66,10 @@ class Transitions:
         for begin in range(len(self.targets)):
             for end in range(len(self.targets)):
                 # check if transition matches that place within the table
-                if self.targets[begin].equals(transition.begin(), True) and self.targets[end].equals(transition.end(), True):
+                if (self.targets[begin].equals(transition.begin(), True)
+                        and self.targets[end].equals(transition.end(), True)):
                     # check if place is empty
-                    if not self.transitions[begin][end]:
+                    if overwrite or not self.transitions[begin][end]:
                         log.debug("adding transition %s = %s -> %s\n%s" %
                                   (transition.name(), self.targets[begin].name, self.targets[end].name, transition))
                         # calculate transition if necessary
