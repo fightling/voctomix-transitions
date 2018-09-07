@@ -248,7 +248,7 @@ In *future development* this could also take different `size` values for each so
 
 ### Transitions
 
-`Transitions` (plural) is a python class of the preferred interface to _voctomix_ __transitions__ consisting of the following functions.
+`Transitions` holds a transition table from all configured target composites to each other.
 
 #### Transitions.configure()
 Reads a configuration and returns all included transitions.
@@ -260,10 +260,19 @@ Generates all transitions configured by the list of named configuration values i
 
 `configure()` may throw an `RuntimeError` exception when parsing the syntax causes problems.
 
+#### Transitions.add()
+This method is mainly used internally by `config()` but you also can use it to add transitions manually to the transition table.
+```python
+def add(self, transition, frames, overwrite=False):
+```
+`transition` is added to at all position in the table where it matches.
+`frames` is the number of frames the (re-)calculated transition shall last.
+When `overwrite` is `False` exisiting transitions will not be overwritten.
+
 #### Transitions.find()
 Fetch a transition whose beginning and ending is matching the given composites.
 ```python
-def find(begin, end, transitions):
+def find(begin, end):
 ```
 Searches in the given dictionary `transitions` for a transition that fades `begin` to `end`.
 In a second step also checks if reversed versions transitions match.
@@ -310,6 +319,18 @@ def flip(self):
 ```
 Using this information is stronlgy recommended to get smooth results, when using transitions of type *t*(A,B) &harr; *t*(B,A).
 
+#### Transition.begin/end()
+Returns the begin or end composite of that transition.
+```python
+    def begin(self):
+    def end(self):
+```
+
+#### Transition.name()
+Returns the name of that transition.
+```python
+    def name(self):
+```
 
 ### Composite
 
