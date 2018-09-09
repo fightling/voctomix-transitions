@@ -52,7 +52,7 @@ We relay on the original _voctomix_ composing scenario but
 
 ### Composites
 
-A __composite__ is a mix of multiple images sources into one image.
+A __composite__ is a mix of multiple source images sources into a single destination image.
 The _voctomix_ project was previously using four fixed composites called _fullscreen_, _picture-in-picture (pip)_, _side-by-side_ and _side-by-sidepreview_. We can divide these transitions into the following categories.
 _Voctomix_ also uses a background source image which will not be discussed here because it is just irrelevant for handling transitions.  
 
@@ -95,11 +95,11 @@ First case is to switch from one full screen source to another by switching A &h
 
 Switch from full screen to a composite of both sources can be done by blending the alpha channel of the added source from transparent to opaque or by an animation of the incoming source or both.
 
-#### *t*(A,B) &rarr; *s*(B)
+#### *s*(B) &rarr; *t*(A,B)
 
-![pip-fullscreen-b transition](images/pip-fullscreen-b.gif)
-![sidebyside-fullscreen-b transition](images/sidebyside-fullscreen-b.gif)
-![sidebysidepreview-fullscreen-b transition](images/sidebysidepreview-fullscreen-b.gif)
+![fullscreen-b-pip transition](images/fullscreen-b-pip.gif)
+![fullscreen-b-sidebyside transition](images/fullscreen-b-sidebyside.gif)
+![fullscreen-b-sidebysidepreview transition](images/fullscreen-b-sidebysidepreview.gif)
 
 #### *t*(A,B) &harr; *t*(B,A)
 
