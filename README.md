@@ -48,8 +48,6 @@ Until transitions existed in _voctomix_, switching between any of these composit
 
 ## Use Cases
 
-We relay on the original _voctomix_ composing scenario but
-
 ### Composites
 
 A __composite__ is a mix of multiple source images sources into a single destination image.
